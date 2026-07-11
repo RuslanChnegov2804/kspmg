@@ -20,7 +20,7 @@ function loadData() {
     const saved = localStorage.getItem('kaspi_data');
     if (saved) {
         const data = JSON.parse(saved);
-        Object.assign(user, data.user || {});
+        if (data.user) Object.assign(user, data.user);
         if (data.accessCode) window.accessCode = data.accessCode;
         if (data.faceID) window.faceIDEnabled = data.faceID;
     }
@@ -118,7 +118,6 @@ function showFaceIDScreen() {
     showScreen('face-id-screen');
     setTimeout(() => {
         if (isSettingCode) {
-            // Face ID не может установить код
             alert('Face ID не может установить код. Введите код вручную.');
             showScreen('access-code-screen');
         } else {
@@ -172,7 +171,7 @@ function showProductDetail(id) {
     html += `<h2 style="font-size: 20px; margin-bottom: 8px;">${p.name}</h2>`;
     html += `<div style="color: #ffc107; margin-bottom: 12px;">${'★'.repeat(Math.floor(p.rating))} (${p.reviews} отзывов)</div>`;
     html += `<div style="font-size: 28px; font-weight: 700; margin-bottom: 8px;">${p.price.toLocaleString()} ₸</div>`;
-    html += `<div style="background: #ffc107; display: inline-block; padding: 4px 12px; border-radius: 8px; font-weight: 600; margin-bottom: 16px;">${p.installment.toLocaleString()} ₸ x${p.months}</div>`;
+    html += `<div style="background: #ffc107; display: inline-block; padding: 4px 12px; border-radius: 8px; font-weight: 600; margin-bottom: 16px;">${p.installment.toLocaleString()}  x${p.months}</div>`;
     
     if (p.description) {
         html += `<h3 style="margin: 16px 0 8px;">Описание</h3><p style="color: #666; line-height: 1.5;">${p.description}</p>`;
@@ -234,12 +233,11 @@ function renderMessages() {
     if (!container) return;
     container.innerHTML = messages.map(m => `
         <div class="message-item" onclick="${m.sender === 'Kaspi Gold' ? "showScreen('chat-gold-screen')" : ''}">
-            <div class="message-icon ${m.icon}">${m.icon === 'gold' ? '🏦' : m.icon === 'payments' ? '' : m.icon === 'promo' ? '🎁' : '💬'}</div>
+            <div class="message-icon ${m.icon}">${m.icon === 'gold' ? '🏦' : m.icon === 'payments' ? '' : m.icon === 'promo' ? '' : '💬'}</div>
             <div class="message-content">
                 <div class="message-header"><div class="message-title">${m.sender}</div><div class="message-time">${m.time}</div></div>
                 <div class="message-text">${m.text}</div>
             </div>
-            ${m.unread > 0 ? `<span class="message-badge">${m.unread}</span>` : ''}
         </div>
     `).join('');
 }
@@ -295,7 +293,7 @@ function initMap() {
         const map = L.map('map').setView([50.4229, 80.2328], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution: '© OSM'}).addTo(map);
         const locations = [
-            {lat: 50.4229, lng: 80.2328, name: "Отделение Kaspi", icon: ""},
+            {lat: 50.4229, lng: 80.2328, name: "Отделение Kaspi", icon: "🏦"},
             {lat: 50.4250, lng: 80.2350, name: "Банкомат", icon: "🏧"},
             {lat: 50.4200, lng: 80.2300, name: "Терминал", icon: "💳"},
             {lat: 50.4280, lng: 80.2280, name: "Картомат", icon: "📱"}
@@ -350,7 +348,7 @@ function sendDocument(docType) {
     alert('Документ отправлен!');
 }
 
-// РИСОВАНИЕ QR (имитация)
+// РИСОВАНИЕ QR
 function drawQRCode(code) {
     const canvas = document.getElementById('qr-canvas');
     if (!canvas) return;
@@ -366,7 +364,6 @@ function drawQRCode(code) {
             }
         }
     }
-    // Угловые маркеры
     [[0,0],[140,0],[0,140]].forEach(([x,y]) => {
         ctx.fillStyle = '#000';
         ctx.fillRect(x, y, 30, 30);
@@ -439,7 +436,6 @@ function updateDocumentFields() {
         set('req-dl-issue', d.driversLicense.issueDate);
         set('req-dl-expiry', d.driversLicense.expiryDate);
     }
-    // Восстановить фото
     ['id', 'passport', 'dl'].forEach(type => {
         const saved = localStorage.getItem('doc_photo_' + type);
         if (saved) {
@@ -500,7 +496,7 @@ function editCardNumber() {
     if (num && num.length === 4) {
         user.cardNumber = num;
         saveData();
-        document.querySelector('.card-number').textContent = '*' + num;
+        document.getElementById('bank-card-num').textContent = num;
     }
 }
 
@@ -510,6 +506,7 @@ function editBalance() {
         user.balance = parseFloat(bal);
         saveData();
         document.getElementById('card-balance').textContent = user.balance.toLocaleString() + ' ₸';
+        document.getElementById('bank-balance-display').textContent = user.balance.toLocaleString() + ' ';
         const tb = document.getElementById('transfer-balance');
         if (tb) tb.textContent = user.balance.toLocaleString() + ' ₸';
     }
@@ -523,7 +520,6 @@ function logout() {
 function switchMainTab(tab, el) {
     document.querySelectorAll('.tabs-section .tab').forEach(t => t.classList.remove('active'));
     el.classList.add('active');
-    // Фильтрация товаров
     const container = document.getElementById('main-products');
     let filtered = products;
     if (tab === 'discounts') filtered = products.filter(p => p.price > 10000);
@@ -532,8 +528,37 @@ function switchMainTab(tab, el) {
 }
 
 function showBankTab(tab, el) {
-    document.querySelectorAll('.bank-tabs .tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('#bank-screen .bank-tabs .tab').forEach(t => t.classList.remove('active'));
     el.classList.add('active');
+    document.getElementById('bank-actions-content').style.display = tab === 'actions' ? 'block' : 'none';
+    document.getElementById('bank-info-content').style.display = tab === 'info' ? 'block' : 'none';
+    document.getElementById('bank-statement-content').style.display = tab === 'statement' ? 'block' : 'none';
+}
+
+function showPaymentTab(tab, el) {
+    document.querySelectorAll('#payments-screen .payments-tabs .tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('payments-all-content').style.display = tab === 'all' ? 'block' : 'none';
+    document.getElementById('payments-my-content').style.display = tab === 'my' ? 'block' : 'none';
+}
+
+function showTransferTab(tab, el) {
+    document.querySelectorAll('#transfers-screen .transfers-tabs .tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('transfers-my-content').style.display = tab === 'my' ? 'block' : 'none';
+    document.getElementById('transfers-history-content').style.display = tab === 'history' ? 'block' : 'none';
+}
+
+function switchTransferMethod(method, el) {
+    document.querySelectorAll('#transfer-to-client-screen > div > div:nth-child(2) > div').forEach(d => {
+        d.style.background = '#f8f9fa';
+        d.style.color = '#333';
+    });
+    el.style.background = '#e3342f';
+    el.style.color = '#fff';
+    document.getElementById('transfer-phone-method').style.display = method === 'phone' ? 'block' : 'none';
+    document.getElementById('transfer-card-method').style.display = method === 'card' ? 'block' : 'none';
+    document.getElementById('transfer-qr-method').style.display = method === 'qr' ? 'block' : 'none';
 }
 
 function selectGosuslugiCategory(cat, el) {
@@ -541,11 +566,7 @@ function selectGosuslugiCategory(cat, el) {
     el.style.opacity = '1';
 }
 
-function showTransferHistory() {
-    alert('История переводов:\n\n11 июля: Манар Ж. - 1 500 ₸\n10 июля: Богдан М. - 1 500 ₸\n9 июля: Богдан М. - 208,3 ₸\n8 июля: Бахтияр А. - 2 100 ₸');
-}
-
-// Экспорт функций
+// ЭКСПОРТ ФУНКЦИЙ
 window.showScreen = showScreen;
 window.checkAccessCode = checkAccessCode;
 window.enterCode = enterCode;
@@ -569,7 +590,9 @@ window.editBalance = editBalance;
 window.logout = logout;
 window.switchMainTab = switchMainTab;
 window.showBankTab = showBankTab;
+window.showPaymentTab = showPaymentTab;
+window.showTransferTab = showTransferTab;
+window.switchTransferMethod = switchTransferMethod;
 window.selectGosuslugiCategory = selectGosuslugiCategory;
-window.showTransferHistory = showTransferHistory;
 window.toggleFlashlight = toggleFlashlight;
 window.sendChatMessage = sendChatMessage;
