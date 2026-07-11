@@ -4,1184 +4,998 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="Kaspi.kz">
     <title>Kaspi.kz</title>
-    <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f5f5f5; color: #333; overflow-x: hidden; position: fixed; width: 100%; height: 100%; }
+        .screen { display: none; height: 100vh; overflow-y: auto; background: #fff; padding-bottom: 80px; }
+        .screen.active { display: block; }
+        .header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: #fff; border-bottom: 1px solid #e0e0e0; position: sticky; top: 0; z-index: 100; }
+        .back-btn { font-size: 24px; color: #e3342f; cursor: pointer; width: 30px; }
+        .header-title { font-size: 17px; font-weight: 600; flex: 1; text-align: center; }
+        .city-name { font-size: 14px; color: #007aff; }
+        .lang-switch { display: flex; gap: 8px; }
+        .lang-switch span { font-size: 13px; padding: 4px 8px; border-radius: 12px; border: 1px solid #e0e0e0; cursor: pointer; }
+        .lang-switch span.active { background: #e3342f; color: #fff; border-color: #e3342f; }
+        .promo-banner { display: flex; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; margin: 12px; padding: 16px; color: #fff; overflow: hidden; position: relative; min-height: 120px; }
+        .promo-text { flex: 1; z-index: 2; }
+        .promo-text div:first-child { font-size: 14px; margin-bottom: 4px; }
+        .promo-badge { display: inline-block; background: #ffc107; color: #000; padding: 4px 12px; border-radius: 12px; font-size: 13px; font-weight: 600; margin-top: 8px; }
+        .promo-banner img { position: absolute; right: 0; top: 0; height: 100%; width: 120px; object-fit: cover; opacity: 0.3; }
+        .services-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 16px; }
+        .service-item { display: flex; flex-direction: column; align-items: center; cursor: pointer; }
+        .service-icon { width: 56px; height: 56px; background: #f8f9fa; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 6px; position: relative; }
+        .service-icon svg { width: 32px; height: 32px; }
+        .service-icon.with-badge { position: relative; }
+        .service-icon .badge { position: absolute; top: -4px; right: -4px; background: #ffc107; color: #000; font-size: 9px; padding: 2px 6px; border-radius: 8px; font-weight: 600; }
+        .service-icon.magnum { background: #e3342f; }
+        .service-icon.magnum svg { fill: #fff; stroke: #fff; }
+        .service-name { font-size: 12px; text-align: center; }
+        .finance-section { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0 16px 16px; }
+        .finance-item { display: flex; align-items: center; gap: 12px; background: #fff; padding: 12px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .finance-badge { width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; flex-shrink: 0; }
+        .finance-badge.yellow { background: #ffc107; color: #000; }
+        .finance-badge.red { background: #e3342f; color: #fff; }
+        .finance-badge.green { background: #38c172; color: #fff; }
+        .finance-item span:last-child { font-size: 13px; line-height: 1.3; }
+        .finance-item small { font-size: 11px; color: #666; }
+        .tabs-section { display: flex; gap: 8px; padding: 0 16px 12px; }
+        .tab { flex: 1; padding: 10px 16px; background: #f8f9fa; border-radius: 20px; text-align: center; font-size: 14px; cursor: pointer; border: 2px solid #e3342f; color: #e3342f; background: #fff; }
+        .tab.active { background: #e3342f; color: #fff; }
+        .products-scroll { padding: 0 16px 100px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .product-card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); cursor: pointer; }
+        .product-card img { width: 100%; height: 160px; object-fit: cover; background: #f0f0f0; }
+        .product-info { padding: 10px; }
+        .product-title { font-size: 13px; margin-bottom: 6px; line-height: 1.3; height: 34px; overflow: hidden; }
+        .product-rating { display: flex; align-items: center; gap: 4px; margin-bottom: 6px; font-size: 12px; }
+        .stars { color: #ffc107; }
+        .product-price { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+        .product-installment { display: flex; gap: 8px; align-items: center; font-size: 12px; }
+        .installment-badge { background: #ffc107; padding: 2px 8px; border-radius: 6px; font-weight: 600; }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid #e0e0e0; display: flex; justify-content: space-around; padding: 8px 0 calc(8px + env(safe-area-inset-bottom)); z-index: 1000; }
+        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; position: relative; color: #999; }
+        .nav-item svg { width: 24px; height: 24px; }
+        .nav-item div:last-child { font-size: 10px; }
+        .nav-item.active { color: #e3342f; }
+        .notification-badge { position: absolute; top: -4px; right: 50%; transform: translateX(12px); background: #e3342f; color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 10px; font-weight: 600; }
+        .profile-section { display: flex; align-items: center; gap: 12px; padding: 16px; background: #fff; border-bottom: 1px solid #e0e0e0; cursor: pointer; }
+        .profile-avatar { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; }
+        .profile-info { flex: 1; }
+        .profile-name { font-size: 16px; font-weight: 600; }
+        .profile-subtitle { font-size: 13px; color: #666; }
+        .arrow { font-size: 20px; color: #ccc; }
+        .partner-services { padding: 16px; }
+        .partner-services h3 { font-size: 16px; margin-bottom: 12px; }
+        .partner-item { display: flex; align-items: center; gap: 12px; padding: 12px; background: #fff; border-radius: 12px; margin-bottom: 8px; cursor: pointer; }
+        .partner-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+        .partner-icon.glovo { background: #fbbf24; }
+        .partner-icon.alipay { background: #1677ff; }
+        .partner-info { flex: 1; }
+        .partner-name { font-size: 15px; font-weight: 600; }
+        .partner-desc { font-size: 12px; color: #666; }
+        .settings-content { padding: 16px; }
+        .profile-photo-section { display: flex; flex-direction: column; align-items: center; padding: 24px 0; position: relative; }
+        .large-avatar { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; }
+        .camera-icon { position: absolute; bottom: 55px; right: calc(50% - 30px); background: #e3342f; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; cursor: pointer; }
+        .change-photo-btn { color: #007aff; font-size: 15px; cursor: pointer; margin-top: 8px; }
+        .settings-section { background: #fff; border-radius: 12px; margin-bottom: 16px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+        .setting-item { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
+        .setting-item:last-child { border-bottom: none; }
+        .setting-label { font-size: 15px; flex: 1; }
+        .setting-subtitle { font-size: 12px; color: #999; margin-top: 4px; }
+        .switch { position: relative; display: inline-block; width: 50px; height: 28px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .3s; border-radius: 28px; }
+        .slider:before { position: absolute; content: ""; height: 24px; width: 24px; left: 2px; bottom: 2px; background-color: white; transition: .3s; border-radius: 50%; }
+        input:checked + .slider { background-color: #e3342f; }
+        input:checked + .slider:before { transform: translateX(22px); }
+        .logout-btn { background: #fff; color: #e3342f; text-align: center; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+        .delete-account { text-align: center; font-size: 13px; color: #666; }
+        .delete-account a { color: #007aff; }
+        .card-gold { background: linear-gradient(135deg, #f6d365 0%, #fda085 100%); border-radius: 16px; padding: 20px; margin: 16px; color: #fff; box-shadow: 0 4px 12px rgba(246,211,101,0.4); cursor: pointer; }
+        .card-header { margin-bottom: 12px; }
+        .card-logo { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+        .card-balance { font-size: 32px; font-weight: 700; }
+        .card-number { font-size: 16px; opacity: 0.9; }
+        .bank-actions { padding: 0 16px; }
+        .action-btn { background: #fff; padding: 16px; border-radius: 12px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; cursor: pointer; position: relative; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+        .action-icon { width: 40px; height: 40px; background: #f8f9fa; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .action-btn div:nth-child(2) { flex: 1; font-size: 15px; }
+        .action-subtitle { font-size: 12px; color: #999; width: 100%; margin-top: 4px; }
+        .new-badge { background: #e3342f; color: #fff; font-size: 11px; padding: 3px 8px; border-radius: 8px; position: absolute; right: 16px; top: 50%; transform: translateY(-50%); }
+        .bank-tabs { display: flex; gap: 8px; padding: 12px 16px; background: #f8f9fa; }
+        .bank-tabs .tab { flex: 1; padding: 8px 16px; background: #fff; border-radius: 8px; text-align: center; font-size: 14px; cursor: pointer; border: none; }
+        .bank-tabs .tab.active { background: #e3342f; color: #fff; }
+        .statement-content { padding: 16px; }
+        .statement-header { background: #fff; padding: 16px; border-radius: 12px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+        .period { font-size: 14px; color: #666; margin-bottom: 8px; }
+        .summary { display: flex; gap: 16px; }
+        .income { color: #38c172; font-size: 16px; font-weight: 600; }
+        .expense { color: #e3342f; font-size: 16px; font-weight: 600; }
+        .transaction-item { background: #fff; padding: 14px 16px; border-radius: 12px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+        .transaction-icon { width: 40px; height: 40px; border-radius: 50%; background: #f8f9fa; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .transaction-info { flex: 1; }
+        .transaction-name { font-size: 15px; font-weight: 500; margin-bottom: 4px; }
+        .transaction-type { font-size: 12px; color: #999; }
+        .transaction-amount { font-size: 16px; font-weight: 600; }
+        .transaction-amount.positive { color: #38c172; }
+        .transaction-amount.negative { color: #e3342f; }
+        .payments-tabs { display: flex; gap: 8px; padding: 12px 16px; background: #f8f9fa; }
+        .payments-tabs .tab { flex: 1; padding: 8px 16px; background: #fff; border-radius: 8px; text-align: center; font-size: 14px; cursor: pointer; border: none; }
+        .payments-tabs .tab.active { background: #e3342f; color: #fff; }
+        .search-bar { display: flex; align-items: center; gap: 12px; background: #f8f9fa; padding: 12px 16px; margin: 0 16px 12px; border-radius: 12px; }
+        .search-bar input { flex: 1; border: none; background: transparent; font-size: 15px; outline: none; }
+        .payments-categories { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0 16px 100px; }
+        .category-item { background: #fff; padding: 16px 12px; border-radius: 12px; text-align: center; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .cat-icon { width: 48px; height: 48px; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; }
+        .cat-icon svg { width: 40px; height: 40px; }
+        .category-item div:last-child { font-size: 12px; line-height: 1.3; }
+        .utilities-list { padding: 0 16px 100px; }
+        .list-item { background: #fff; padding: 16px; border-radius: 12px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+        .list-icon { width: 40px; height: 40px; background: #f8f9fa; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .list-label { flex: 1; font-size: 15px; }
+        .transfers-tabs { display: flex; gap: 8px; padding: 12px 16px; background: #f8f9fa; }
+        .transfers-tabs .tab { flex: 1; padding: 8px 16px; background: #fff; border-radius: 8px; text-align: center; font-size: 14px; cursor: pointer; border: none; }
+        .transfers-tabs .tab.active { background: #e3342f; color: #fff; }
+        .transfers-list { padding: 16px; }
+        .transfer-item { background: #fff; padding: 16px; border-radius: 12px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+        .transfer-icon { width: 44px; height: 44px; background: #f8f9fa; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+        .transfer-info { flex: 1; }
+        .transfer-title { font-size: 15px; font-weight: 500; margin-bottom: 4px; }
+        .transfer-subtitle { font-size: 12px; color: #999; }
+        .qr-content { display: flex; flex-direction: column; align-items: center; padding: 24px 16px; }
+        .qr-instruction { font-size: 18px; font-weight: 600; margin-bottom: 24px; }
+        .qr-scanner { width: 100%; max-width: 300px; aspect-ratio: 1; background: #000; border-radius: 24px; position: relative; overflow: hidden; margin-bottom: 32px; }
+        #qr-video { width: 100%; height: 100%; object-fit: cover; }
+        .qr-frame { position: absolute; top: 0; left: 0; right: 0; bottom: 0; }
+        .corner { position: absolute; width: 40px; height: 40px; border: 4px solid #e3342f; }
+        .corner.top-left { top: 20px; left: 20px; border-right: none; border-bottom: none; }
+        .corner.top-right { top: 20px; right: 20px; border-left: none; border-bottom: none; }
+        .corner.bottom-left { bottom: 20px; left: 20px; border-right: none; border-top: none; }
+        .corner.bottom-right { bottom: 20px; right: 20px; border-left: none; border-top: none; }
+        .flashlight-btn { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.2); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; }
+        .qr-options { width: 100%; background: #fff; border-radius: 24px 24px 0 0; padding: 24px 16px; }
+        .qr-option { display: flex; align-items: center; gap: 12px; padding: 14px; background: #f8f9fa; border-radius: 12px; margin-bottom: 8px; cursor: pointer; }
+        .option-badge { padding: 4px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; }
+        .option-badge.yellow { background: #ffc107; color: #000; }
+        .option-badge.red { background: #e3342f; color: #fff; }
+        .qr-option div:nth-child(2) { flex: 1; font-size: 14px; }
+        .qr-option small { font-size: 11px; color: #999; }
+        .messages-list { padding: 0 16px 100px; }
+        .message-item { background: #fff; padding: 16px; border-radius: 12px; margin-bottom: 8px; cursor: pointer; display: flex; align-items: flex-start; gap: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+        .message-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; }
+        .message-icon.gold { background: linear-gradient(135deg, #f6d365 0%, #fda085 100%); }
+        .message-icon.payments { background: #ffc107; }
+        .message-icon.promo { background: #e3342f; }
+        .message-icon.chat { background: #e3342f; }
+        .message-content { flex: 1; }
+        .message-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+        .message-title { font-size: 15px; font-weight: 600; }
+        .message-time { font-size: 12px; color: #999; }
+        .message-text { font-size: 14px; color: #666; line-height: 1.4; }
+        .message-badge { background: #e3342f; color: #fff; font-size: 11px; padding: 2px 8px; border-radius: 10px; margin-left: 8px; }
+        .gosuslugi-tabs { display: flex; gap: 8px; padding: 12px 16px; background: #f8f9fa; }
+        .gosuslugi-tabs .tab { flex: 1; padding: 8px 16px; background: #fff; border-radius: 8px; text-align: center; font-size: 14px; cursor: pointer; border: none; }
+        .gosuslugi-tabs .tab.active { background: #e3342f; color: #fff; }
+        .gosuslugi-categories { display: flex; gap: 12px; padding: 16px; overflow-x: auto; }
+        .category-icon { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; min-width: 70px; }
+        .category-icon div:first-child { width: 56px; height: 56px; background: #f8f9fa; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+        .category-icon div:last-child { font-size: 12px; text-align: center; }
+        .gosuslugi-content { padding: 0 16px 100px; }
+        .section-title { font-size: 16px; font-weight: 600; margin: 16px 0 12px; }
+        .gosuslugi-list { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+        .gosuslugi-item { display: flex; align-items: center; gap: 12px; padding: 16px; border-bottom: 1px solid #f0f0f0; cursor: pointer; position: relative; }
+        .gosuslugi-item:last-child { border-bottom: none; }
+        .gosuslugi-icon { width: 40px; height: 40px; background: #f8f9fa; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .gosuslugi-info { flex: 1; }
+        .gosuslugi-title { font-size: 15px; font-weight: 500; margin-bottom: 4px; }
+        .gosuslugi-subtitle { font-size: 12px; color: #999; }
+        .badge-new { background: #e3342f; color: #fff; font-size: 11px; padding: 3px 8px; border-radius: 8px; }
+        .egov-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; background: #fff; min-height: 300px; }
+        .egov-logos { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+        .egov-logo { font-size: 32px; font-weight: bold; color: #007aff; }
+        .egov-plus { font-size: 24px; color: #999; }
+        .kaspi-circle { width: 60px; height: 60px; background: #e3342f; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .kaspi-circle svg { width: 40px; height: 40px; fill: #fff; }
+        .loading-text { font-size: 14px; color: #999; text-align: center; }
+        .document-content { padding: 16px; }
+        .document-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+        .doc-tab { flex: 1; padding: 10px 16px; background: #f8f9fa; border-radius: 8px; text-align: center; font-size: 14px; cursor: pointer; border: none; }
+        .doc-tab.active { background: #e3342f; color: #fff; }
+        .document-view { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.1); }
+        .id-card-front, .id-card-back { padding: 20px; background: linear-gradient(135deg, #e0f2fe 0%, #bbf7d0 100%); }
+        .id-header { text-align: center; font-weight: 600; margin-bottom: 16px; font-size: 12px; line-height: 1.4; }
+        .id-photo-section { display: flex; gap: 16px; margin-bottom: 16px; }
+        .id-photo { width: 100px; height: 130px; object-fit: cover; border-radius: 8px; border: 2px solid #fff; cursor: pointer; }
+        .add-photo-btn { width: 100px; height: 130px; border-radius: 8px; border: 2px dashed #999; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #999; cursor: pointer; background: #f8f9fa; }
+        .id-info { flex: 1; }
+        .id-field { margin-bottom: 10px; }
+        .field-label { font-size: 10px; color: #666; margin-bottom: 2px; }
+        .field-value { font-size: 14px; font-weight: 600; }
+        .id-iin { background: #fff; padding: 10px; border-radius: 8px; text-align: center; }
+        .id-iin div:first-child { font-size: 11px; color: #666; margin-bottom: 4px; }
+        .id-iin div:last-child { font-size: 16px; font-weight: 700; letter-spacing: 1px; }
+        .id-card-back { margin-top: 12px; }
+        .id-back-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+        .barcode { font-family: monospace; font-size: 20px; letter-spacing: 2px; }
+        .flag-icon { font-size: 30px; }
+        .doc-number { margin-left: auto; font-size: 16px; font-weight: 600; }
+        .id-back-field { margin-bottom: 12px; }
+        .mrz { margin-top: 16px; font-family: monospace; font-size: 11px; line-height: 1.6; background: #fff; padding: 10px; border-radius: 8px; }
+        .document-actions { padding: 16px; background: #fff; border-top: 1px solid #e0e0e0; position: fixed; bottom: 60px; left: 0; right: 0; }
+        .btn-primary, .btn-secondary { width: 100%; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; margin-bottom: 8px; border: none; }
+        .btn-primary { background: #007aff; color: #fff; }
+        .btn-secondary { background: #fff; color: #007aff; border: 2px solid #007aff; }
+        .passport-page { padding: 20px; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); }
+        .passport-header { text-align: center; font-size: 11px; margin-bottom: 16px; line-height: 1.4; }
+        .passport-header div:first-child { font-size: 14px; font-weight: bold; margin-bottom: 8px; }
+        .passport-photo-section { display: flex; gap: 16px; }
+        .passport-photo { width: 110px; height: 140px; object-fit: cover; border-radius: 8px; border: 2px solid #fff; cursor: pointer; }
+        .passport-info { flex: 1; }
+        .passport-row { margin-bottom: 8px; }
+        .passport-label { font-size: 9px; color: #666; margin-bottom: 2px; }
+        .passport-value { font-size: 13px; font-weight: 600; }
+        .drivers-license-front { padding: 20px; background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%); }
+        .dl-header { text-align: center; font-size: 10px; margin-bottom: 16px; line-height: 1.4; }
+        .dl-header div:first-child { font-weight: bold; font-size: 12px; }
+        .dl-photo-section { display: flex; gap: 16px; }
+        .dl-photo { width: 100px; height: 130px; object-fit: cover; border-radius: 8px; border: 2px solid #fff; cursor: pointer; }
+        .dl-info { flex: 1; }
+        .dl-row { margin-bottom: 6px; }
+        .dl-label { font-size: 9px; color: #666; margin-bottom: 2px; }
+        .dl-value { font-size: 12px; font-weight: 600; }
+        .dl-categories { background: #fff; padding: 6px; border-radius: 6px; font-size: 11px; }
+        #map { height: 300px; width: 100%; }
+        .map-filters { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 16px; }
+        .map-filter { background: #f8f9fa; padding: 12px; border-radius: 12px; text-align: center; cursor: pointer; }
+        .map-filter-icon { font-size: 32px; margin-bottom: 6px; }
+        .map-filter-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+        .map-filter-desc { font-size: 11px; color: #999; }
+        .travel-banner { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; margin: 12px; padding: 16px; color: #fff; position: relative; overflow: hidden; min-height: 100px; }
+        .travel-categories { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 16px; }
+        .travel-category { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; }
+        .travel-category-icon { width: 56px; height: 56px; background: #f8f9fa; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 28px; position: relative; }
+        .travel-category-name { font-size: 12px; text-align: center; }
+        .travel-tabs { display: flex; gap: 8px; padding: 0 16px 12px; }
+        .travel-tabs .tab { flex: 1; padding: 10px 16px; background: #f8f9fa; border-radius: 20px; text-align: center; font-size: 14px; cursor: pointer; border: 2px solid #e3342f; color: #e3342f; background: #fff; }
+        .travel-tabs .tab.active { background: #e3342f; color: #fff; }
+        .hotels-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0 16px 100px; }
+        .hotel-card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); cursor: pointer; }
+        .hotel-card img { width: 100%; height: 120px; object-fit: cover; }
+        .hotel-info { padding: 10px; }
+        .hotel-name { font-size: 13px; margin-bottom: 6px; font-weight: 500; }
+        .hotel-stars { font-size: 12px; color: #999; margin-bottom: 6px; }
+        .hotel-price { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+        .old-price { text-decoration: line-through; color: #999; font-size: 12px; }
+        .discount-badge { background: #e3342f; color: #fff; padding: 2px 6px; border-radius: 6px; font-size: 11px; }
+        .shop-header { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: #fff; }
+        .shop-header input { flex: 1; padding: 10px 16px; border: none; background: #f8f9fa; border-radius: 12px; font-size: 15px; outline: none; }
+        .shop-categories { display: flex; gap: 8px; padding: 12px 16px; overflow-x: auto; }
+        .shop-category { padding: 8px 16px; background: #f8f9fa; border-radius: 20px; font-size: 13px; white-space: nowrap; cursor: pointer; border: 2px solid transparent; }
+        .shop-category.active { background: #e3342f; color: #fff; }
+        .access-code-screen { background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; min-height: 100vh; }
+        .access-code-avatar { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; margin-bottom: 20px; }
+        .access-code-title { font-size: 20px; margin-bottom: 40px; }
+        .code-dots { display: flex; gap: 20px; margin-bottom: 40px; }
+        .code-dot { width: 20px; height: 20px; border-radius: 50%; background: #e0e0e0; }
+        .code-dot.filled { background: #e3342f; }
+        .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 100%; max-width: 300px; }
+        .numpad-btn { padding: 20px; background: #f8f9fa; border: none; border-radius: 12px; font-size: 24px; cursor: pointer; text-align: center; }
+        .numpad-btn:active { background: #e0e0e0; }
+        .numpad-btn small { display: block; font-size: 10px; margin-top: 4px; color: #999; }
+        .forgot-code { margin-top: 30px; color: #007aff; font-size: 14px; cursor: pointer; }
+        .face-id-screen { background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; min-height: 100vh; }
+        .face-id-icon { width: 100px; height: 100px; border: 3px solid #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 50px; margin-bottom: 30px; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.7; } }
+        .face-id-text { font-size: 20px; margin-bottom: 10px; }
+        .face-id-subtext { font-size: 14px; color: #999; }
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 2000; display: flex; align-items: center; justify-content: center; }
+        .modal-content { background: #fff; border-radius: 20px; padding: 24px; max-width: 350px; width: 90%; text-align: center; }
+        .modal-close { position: absolute; top: 16px; right: 16px; font-size: 24px; cursor: pointer; color: #999; }
+        .modal-qr { width: 200px; height: 200px; margin: 20px auto; background: #f0f0f0; display: flex; align-items: center; justify-content: center; }
+        .modal-code { font-size: 32px; font-weight: 700; margin: 16px 0; }
+        .requisites-list { padding: 16px; }
+        .req-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid #f0f0f0; }
+        .req-label { font-size: 13px; color: #999; }
+        .req-value { font-size: 16px; font-weight: 500; }
+        .req-copy { font-size: 20px; cursor: pointer; color: #999; }
+        .send-req-btn { width: 100%; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; border: 2px solid #007aff; background: #fff; color: #007aff; margin-top: 20px; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
+    </style>
 </head>
 <body>
-    <!-- ГЛАВНЫЙ ЭКРАН -->
-    <div id="main-screen" class="screen active">
-        <div class="header">
-            <div class="time">06:35</div>
-            <div class="status-icons">
-                <span>📶</span>
-                <span>📡</span>
-                <span>🔋</span>
+
+<!-- ГЛАВНЫЙ ЭКРАН -->
+<div id="main-screen" class="screen active">
+    <div class="content">
+        <div class="promo-banner">
+            <div class="promo-text">
+                <div>Забронируйте вариант</div>
+                <div>отдыха в Казахстане</div>
+                <div class="promo-badge">0·0·12</div>
             </div>
+            <img src="https://images.unsplash.com/photo-1510798831971-661eb04b3739?w=400&h=300&fit=crop" alt="Travel">
         </div>
-        
-        <div class="content">
-            <div class="promo-banner">
-                <div class="promo-text">
-                    <div>Забронируйте вариант</div>
-                    <div>отдыха в Казахстане</div>
-                    <div class="promo-badge">0·0·12</div>
-                </div>
-                <img src="https://images.unsplash.com/photo-1510798831971-661eb04b3739?w=400" alt="Travel">
-            </div>
-
-            <div class="services-grid">
-                <div class="service-item" onclick="showScreen('shop-screen')">
-                    <div class="service-icon with-badge">
-                        🛒
-                        <span class="badge">0·0·24</span>
-                    </div>
-                    <div class="service-name">Магазин</div>
-                </div>
-                <div class="service-item" onclick="checkAccessCode('bank-screen')">
-                    <div class="service-icon">💳</div>
-                    <div class="service-name">Мой Банк</div>
-                </div>
-                <div class="service-item" onclick="showScreen('payments-screen')">
-                    <div class="service-icon"></div>
-                    <div class="service-name">Платежи</div>
-                </div>
-                <div class="service-item" onclick="showScreen('transfers-screen')">
-                    <div class="service-icon">🔄</div>
-                    <div class="service-name">Переводы</div>
-                </div>
-                <div class="service-item" onclick="showScreen('magnum-screen')">
-                    <div class="service-icon magnum">m</div>
-                    <div class="service-name">Magnum</div>
-                </div>
-                <div class="service-item" onclick="showScreen('travel-screen')">
-                    <div class="service-icon with-badge">
-                        🧳
-                        <span class="badge">0·0·24</span>
-                    </div>
-                    <div class="service-name">Travel</div>
-                </div>
-                <div class="service-item" onclick="showScreen('gosuslugi-screen')">
-                    <div class="service-icon">🏛️</div>
-                    <div class="service-name">Госуслуги</div>
-                </div>
-                <div class="service-item" onclick="showScreen('work-screen')">
-                    <div class="service-icon">💼</div>
-                    <div class="service-name">Работа</div>
-                </div>
-            </div>
-
-            <div class="finance-section">
-                <div class="finance-item">
-                    <div class="finance-badge yellow">0·0·24</div>
-                    <span>Рассрочка 0-0-24</span>
-                </div>
-                <div class="finance-item">
-                    <div class="finance-badge yellow">0·0·12</div>
-                    <span>Рассрочка 0-0-12</span>
-                </div>
-                <div class="finance-item">
-                    <div class="finance-badge red">Red+</div>
-                    <span>Kaspi Red+<br><small>Рассрочка до 500 000 ₸</small></span>
-                </div>
-                <div class="finance-item">
-                    <div class="finance-badge green">💳</div>
-                    <span>Кредит<br><small>до 2,2 млн ₸</small></span>
-                </div>
-            </div>
-
-            <div class="tabs-section">
-                <div class="tab active">Рекомендации</div>
-                <div class="tab">Скидки</div>
-                <div class="tab">Бонусы</div>
-            </div>
-
-            <div class="products-scroll" id="main-products">
-                <!-- Товары загружаются из data.js -->
-            </div>
-        </div>
-
-        <nav class="bottom-nav">
-            <div class="nav-item active" onclick="showScreen('main-screen')">
-                <div>🏠</div>
-                <div>Главная</div>
-            </div>
-            <div class="nav-item" onclick="showScreen('qr-screen')">
-                <div></div>
-                <div>Kaspi QR</div>
-            </div>
-            <div class="nav-item" onclick="showScreen('messages-screen')">
-                <div></div>
-                <div>Сообщения</div>
-                <span class="notification-badge">40</span>
-            </div>
-            <div class="nav-item" onclick="showScreen('services-screen')">
-                <div></div>
-                <div>Сервисы</div>
-            </div>
-        </nav>
-    </div>
-
-    <!-- ЭКРАН СЕРВИСЫ -->
-    <div id="services-screen" class="screen">
-        <div class="header">
-            <div class="back-btn" onclick="showScreen('main-screen')">←</div>
-            <div class="header-title">Сервисы</div>
-            <div class="lang-switch">
-                <span>Қаз</span>
-                <span class="active">Рус</span>
-            </div>
-        </div>
-        
-        <div class="profile-section">
-            <img src="https://i.pravatar.cc/150?img=11" alt="Profile" class="profile-avatar" id="profile-avatar">
-            <div class="profile-info">
-                <div class="profile-name">Руслан Ч.</div>
-                <div class="profile-subtitle">Настройки</div>
-            </div>
-            <div class="arrow">›</div>
-        </div>
-
         <div class="services-grid">
             <div class="service-item" onclick="showScreen('shop-screen')">
                 <div class="service-icon with-badge">
-                    🛒
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#e3342f" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
                     <span class="badge">0·0·24</span>
                 </div>
                 <div class="service-name">Магазин</div>
             </div>
             <div class="service-item" onclick="checkAccessCode('bank-screen')">
-                <div class="service-icon">💳</div>
+                <div class="service-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#e3342f" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                </div>
                 <div class="service-name">Мой Банк</div>
             </div>
             <div class="service-item" onclick="showScreen('payments-screen')">
-                <div class="service-icon">💸</div>
+                <div class="service-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#e3342f" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                </div>
                 <div class="service-name">Платежи</div>
             </div>
             <div class="service-item" onclick="showScreen('transfers-screen')">
-                <div class="service-icon">🔄</div>
+                <div class="service-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#e3342f" stroke-width="2"><polyline points="17,1 21,5 17,9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7,23 3,19 7,15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+                </div>
                 <div class="service-name">Переводы</div>
             </div>
             <div class="service-item">
-                <div class="service-icon">🎁</div>
-                <div class="service-name">Акции</div>
+                <div class="service-icon magnum">
+                    <svg viewBox="0 0 24 24"><text x="12" y="17" text-anchor="middle" font-size="16" font-weight="bold" fill="#fff">m</text></svg>
+                </div>
+                <div class="service-name">Magnum</div>
             </div>
             <div class="service-item" onclick="showScreen('travel-screen')">
                 <div class="service-icon with-badge">
-                    🧳
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#e3342f" stroke-width="2"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"/><polyline points="17,2 12,7 7,2"/></svg>
                     <span class="badge">0·0·24</span>
                 </div>
                 <div class="service-name">Travel</div>
             </div>
             <div class="service-item" onclick="showScreen('gosuslugi-screen')">
-                <div class="service-icon">🏛️</div>
+                <div class="service-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#e3342f" stroke-width="2"><path d="M3 21h18M5 21V7l8-4 8 4v14M8 21v-9a2 2 0 012-2h4a2 2 0 012 2v9"/></svg>
+                </div>
                 <div class="service-name">Госуслуги</div>
             </div>
             <div class="service-item">
-                <div class="service-icon">📢</div>
-                <div class="service-name">Объявления</div>
-            </div>
-            <div class="service-item">
-                <div class="service-icon">🧭</div>
-                <div class="service-name">Гид</div>
-            </div>
-            <div class="service-item" onclick="showScreen('maps-screen')">
-                <div class="service-icon">📍</div>
-                <div class="service-name">Kaspi Maps</div>
-            </div>
-            <div class="service-item">
-                <div class="service-icon">🎫</div>
-                <div class="service-name">Сертификаты</div>
-            </div>
-            <div class="service-item">
-                <div class="service-icon">💼</div>
+                <div class="service-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#e3342f" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/><circle cx="12" cy="11" r="3"/><path d="M20 8v6M23 11h-6"/></svg>
+                </div>
                 <div class="service-name">Работа</div>
             </div>
         </div>
-
-        <div class="partner-services">
-            <h3>Партнерские сервисы</h3>
-            <div class="partner-item">
-                <div class="partner-icon glovo">🟡</div>
-                <div class="partner-info">
-                    <div class="partner-name">Glovo</div>
-                    <div class="partner-desc">Сервис доставки еды</div>
-                </div>
-                <div class="arrow">›</div>
-            </div>
-            <div class="partner-item">
-                <div class="partner-icon alipay">🔵</div>
-                <div class="partner-info">
-                    <div class="partner-name">Alipay+</div>
-                    <div class="partner-desc">Оплата за границей через QR</div>
-                </div>
-                <div class="arrow">›</div>
-            </div>
+        <div class="finance-section">
+            <div class="finance-item"><div class="finance-badge yellow">0·0·24</div><span>Рассрочка 0-0-24</span></div>
+            <div class="finance-item"><div class="finance-badge yellow">0·0·12</div><span>Рассрочка 0-0·12</span></div>
+            <div class="finance-item"><div class="finance-badge red">Red+</div><span>Kaspi Red+<br><small>Рассрочка до 500 000 ₸</small></span></div>
+            <div class="finance-item"><div class="finance-badge green">💳</div><span>Кредит<br><small>до 2,2 млн ₸</small></span></div>
         </div>
-
-        <nav class="bottom-nav">
-            <div class="nav-item" onclick="showScreen('main-screen')">
-                <div>🏠</div>
-                <div>Главная</div>
-            </div>
-            <div class="nav-item" onclick="showScreen('qr-screen')">
-                <div>📱</div>
-                <div>Kaspi QR</div>
-            </div>
-            <div class="nav-item" onclick="showScreen('messages-screen')">
-                <div></div>
-                <div>Сообщения</div>
-                <span class="notification-badge">40</span>
-            </div>
-            <div class="nav-item active">
-                <div>☰</div>
-                <div>Сервисы</div>
-            </div>
-        </nav>
+        <div class="tabs-section">
+            <div class="tab active" onclick="switchMainTab('recommendations', this)">Рекомендации</div>
+            <div class="tab" onclick="switchMainTab('discounts', this)">Скидки</div>
+            <div class="tab" onclick="switchMainTab('bonuses', this)">Бонусы</div>
+        </div>
+        <div class="products-scroll" id="main-products"></div>
     </div>
-
-    <!-- ЭКРАН НАСТРОЙКИ -->
-    <div id="settings-screen" class="screen">
-        <div class="header">
-            <div class="back-btn" onclick="showScreen('services-screen')">←</div>
-            <div class="header-title">Настройки</div>
+    <nav class="bottom-nav">
+        <div class="nav-item active" onclick="showScreen('main-screen')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+            <div>Главная</div>
         </div>
-        
-        <div class="settings-content">
-            <div class="profile-photo-section">
+        <div class="nav-item" onclick="showScreen('qr-screen')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            <div>Kaspi QR</div>
+        </div>
+        <div class="nav-item" onclick="showScreen('messages-screen')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            <div>Сообщения</div>
+            <span class="notification-badge">40</span>
+        </div>
+        <div class="nav-item" onclick="showScreen('services-screen')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            <div>Сервисы</div>
+        </div>
+    </nav>
+</div>
+
+<!-- ЭКРАН СЕРВИСЫ -->
+<div id="services-screen" class="screen">
+    <div class="header">
+        <div class="back-btn" onclick="showScreen('main-screen')">←</div>
+        <div class="header-title">Сервисы</div>
+        <div class="lang-switch"><span>Қаз</span><span class="active">Рус</span></div>
+    </div>
+    <div class="profile-section" onclick="showScreen('settings-screen')">
+        <img src="https://i.pravatar.cc/150?img=11" alt="Profile" class="profile-avatar" id="profile-avatar">
+        <div class="profile-info"><div class="profile-name">Руслан Ч.</div><div class="profile-subtitle">Настройки</div></div>
+        <div class="arrow">›</div>
+    </div>
+    <div class="services-grid">
+        <div class="service-item" onclick="showScreen('shop-screen')">
+            <div class="service-icon with-badge"><svg viewBox="0 0 24 24" fill="none" stroke="#e3342f" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg><span class="badge">0·0·24</span></div>
+            <div class="service-name">Магазин</div>
+        </div>
+        <div class="service-item" onclick="checkAccessCode('bank-screen')">
+            <div class="service-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#e3342f" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></div>
+            <div class="service-name">Мой Банк</div>
+        </div>
+        <div class="service-item" onclick="showScreen('payments-screen')">
+            <div class="service-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#e3342f" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg></div>
+            <div class="service-name">Платежи</div>
+        </div>
+        <div class="service-item" onclick="showScreen('transfers-screen')">
+            <div class="service-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#e3342f" stroke-width="2"><polyline points="17,1 21,5 17,9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7,23 3,19 7,15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg></div>
+            <div class="service-name">Переводы</div>
+        </div>
+        <div class="service-item"><div class="service-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#e3342f" stroke-width="2"><polyline points="20,12 20,22 4,22 4,12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/></svg></div><div class="service-name">Акции</div></div>
+        <div class="service-item" onclick="showScreen('travel-screen')">
+            <div class="service-icon with-badge"><svg viewBox="0 0 24 24" fill="none" stroke="#e3342f" stroke-width="2"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"/><polyline points="17,2 12,7 7,2"/></svg><span class="badge">0·0·24</span></div>
+            <div class="service-name">Travel</div>
+        </div>
+        <div class="service-item" onclick="showScreen('gosuslugi-screen')">
+            <div class="service-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#e3342f" stroke-width="2"><path d="M3 21h18M5 21V7l8-4 8 4v14M8 21v-9a2 2 0 012-2h4a2 2 0 012 2v9"/></svg></div>
+            <div class="service-name">Госуслуги</div>
+        </div>
+        <div class="service-item"><div class="service-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#e3342f" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg></div><div class="service-name">Объявления</div></div>
+        <div class="service-item"><div class="service-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#e3342f" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="16.24,7.76 14.12,14.12 7.76,16.24 9.88,9.88 16.24,7.76"/></svg></div><div class="service-name">Гид</div></div>
+        <div class="service-item" onclick="showScreen('maps-screen')">
+            <div class="service-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#e3342f" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+            <div class="service-name">Kaspi Maps</div>
+        </div>
+        <div class="service-item"><div class="service-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#e3342f" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div class="service-name">Сертификаты</div></div>
+        <div class="service-item"><div class="service-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#e3342f" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg></div><div class="service-name">Работа</div></div>
+    </div>
+    <div class="partner-services">
+        <h3>Партнерские сервисы</h3>
+        <div class="partner-item"><div class="partner-icon glovo"></div><div class="partner-info"><div class="partner-name">Glovo</div><div class="partner-desc">Сервис доставки еды</div></div><div class="arrow">›</div></div>
+        <div class="partner-item"><div class="partner-icon alipay">🔵</div><div class="partner-info"><div class="partner-name">Alipay+</div><div class="partner-desc">Оплата за границей через QR</div></div><div class="arrow">›</div></div>
+    </div>
+    <nav class="bottom-nav">
+        <div class="nav-item" onclick="showScreen('main-screen')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg><div>Главная</div></div>
+        <div class="nav-item" onclick="showScreen('qr-screen')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg><div>Kaspi QR</div></div>
+        <div class="nav-item" onclick="showScreen('messages-screen')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg><div>Сообщения</div><span class="notification-badge">40</span></div>
+        <div class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg><div>Сервисы</div></div>
+    </nav>
+</div>
+
+<!-- ЭКРАН НАСТРОЙКИ -->
+<div id="settings-screen" class="screen">
+    <div class="header"><div class="back-btn" onclick="showScreen('services-screen')">←</div><div class="header-title">Настройки</div></div>
+    <div class="settings-content">
+        <div class="profile-photo-section">
+            <div style="position:relative;">
                 <img src="https://i.pravatar.cc/150?img=11" alt="Profile" class="large-avatar" id="settings-avatar">
-                <div class="camera-icon">📷</div>
-                <div class="change-photo-btn" onclick="changeAvatar()">Изменить фото</div>
+                <div class="camera-icon" onclick="changeAvatar()">📷</div>
             </div>
-
-            <div class="settings-section">
-                <div class="setting-item">
-                    <div class="setting-label">Push-уведомления</div>
-                    <label class="switch">
-                        <input type="checkbox" checked>
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                <div class="setting-item">
-                    <div class="setting-label">Другой звук пополнений и подарков</div>
-                    <div class="setting-subtitle">Пополнения Kaspi Gold, Сертификаты и Бонусы</div>
-                    <label class="switch">
-                        <input type="checkbox" checked>
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                <div class="setting-item" onclick="alert('Язык приложения: Русский')">
-                    <div class="setting-label">Язык приложения</div>
-                    <div class="setting-value">Русский ›</div>
-                </div>
-                <div class="setting-item" onclick="changeAccessCode()">
-                    <div class="setting-label">Изменить код доступа</div>
-                    <div class="arrow">›</div>
-                </div>
-                <div class="setting-item">
-                    <div class="setting-label">Вход с Face ID</div>
-                    <label class="switch">
-                        <input type="checkbox" id="faceid-toggle" onchange="toggleFaceID()">
-                        <span class="slider"></span>
-                    </label>
-                </div>
-                <div class="setting-item" onclick="changePhone()">
-                    <div class="setting-label">Изменить номер телефона</div>
-                    <div class="arrow">›</div>
-                </div>
-            </div>
-
-            <div class="settings-section">
-                <div class="setting-item" onclick="editDocumentRequisites('id-card')">
-                    <div class="setting-label">Реквизиты удостоверения</div>
-                    <div class="arrow">›</div>
-                </div>
-                <div class="setting-item" onclick="editDocumentRequisites('passport')">
-                    <div class="setting-label">Реквизиты паспорта</div>
-                    <div class="arrow">›</div>
-                </div>
-                <div class="setting-item" onclick="editDocumentRequisites('drivers-license')">
-                    <div class="setting-label">Реквизиты водительского удостоверения</div>
-                    <div class="arrow">›</div>
-                </div>
-            </div>
-
-            <div class="logout-btn" onclick="logout()">Выйти</div>
-            <div class="delete-account">
-                Вы можете удалить учетную запись <a href="#">здесь</a>
-            </div>
+            <div class="change-photo-btn" onclick="changeAvatar()">Изменить фото</div>
         </div>
-
-        <nav class="bottom-nav">
-            <div class="nav-item">
-                <div>🏠</div>
-                <div>Главная</div>
-            </div>
-            <div class="nav-item">
-                <div>📱</div>
-                <div>Kaspi QR</div>
-            </div>
-            <div class="nav-item">
-                <div>💬</div>
-                <div>Сообщения</div>
-                <span class="notification-badge">40</span>
-            </div>
-            <div class="nav-item active">
-                <div>☰</div>
-                <div>Сервисы</div>
-            </div>
-        </nav>
+        <div class="settings-section">
+            <div class="setting-item"><div class="setting-label">Push-уведомления</div><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+            <div class="setting-item"><div><div class="setting-label">Другой звук пополнений и подарков</div><div class="setting-subtitle">Пополнения Kaspi Gold, Сертификаты и Бонусы</div></div><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
+            <div class="setting-item"><div><div class="setting-label">Язык приложения</div><div class="setting-subtitle">Русский</div></div><div class="arrow">›</div></div>
+            <div class="setting-item" onclick="changeAccessCode()"><div class="setting-label">Изменить код доступа</div><div class="arrow">›</div></div>
+            <div class="setting-item"><div class="setting-label">Вход с Face ID</div><label class="switch"><input type="checkbox" id="faceid-toggle" onchange="toggleFaceID()"><span class="slider"></span></label></div>
+            <div class="setting-item" onclick="changePhone()"><div class="setting-label">Изменить номер телефона</div><div class="arrow">›</div></div>
+        </div>
+        <div class="settings-section">
+            <div class="setting-item" onclick="editDocumentRequisites('id-card')"><div class="setting-label">Реквизиты удостоверения</div><div class="arrow">›</div></div>
+            <div class="setting-item" onclick="editDocumentRequisites('passport')"><div class="setting-label">Реквизиты паспорта</div><div class="arrow">›</div></div>
+            <div class="setting-item" onclick="editDocumentRequisites('drivers-license')"><div class="setting-label">Реквизиты водительского удостоверения</div><div class="arrow">›</div></div>
+        </div>
+        <div class="logout-btn" onclick="logout()">Выйти</div>
+        <div class="delete-account">Вы можете удалить учетную запись <a href="#">здесь</a></div>
     </div>
+    <nav class="bottom-nav">
+        <div class="nav-item" onclick="showScreen('main-screen')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg><div>Главная</div></div>
+        <div class="nav-item" onclick="showScreen('qr-screen')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg><div>Kaspi QR</div></div>
+        <div class="nav-item" onclick="showScreen('messages-screen')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg><div>Сообщения</div><span class="notification-badge">40</span></div>
+        <div class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg><div>Сервисы</div></div>
+    </nav>
+</div>
 
-    <!-- ЭКРАН МОЙ БАНК -->
-    <div id="bank-screen" class="screen">
-        <div class="header">
-            <div class="back-btn" onclick="showScreen('main-screen')">←</div>
-            <div class="header-title">Мой Банк</div>
+<!-- ЭКРАН МОЙ БАНК -->
+<div id="bank-screen" class="screen">
+    <div class="header"><div class="back-btn" onclick="showScreen('main-screen')">←</div><div class="header-title">Мой Банк</div></div>
+    <div class="bank-content">
+        <div class="card-gold" onclick="editBalance()">
+            <div class="card-header"><div class="card-logo">Kaspi Gold</div><div class="card-balance" id="card-balance">16 115,94 ₸</div></div>
+            <div class="card-number" onclick="event.stopPropagation(); editCardNumber()">*6740</div>
         </div>
-        
-        <div class="bank-content">
-            <div class="card-gold">
-                <div class="card-header">
-                    <div class="card-logo"> Kaspi Gold</div>
-                    <div class="card-balance" id="card-balance">16 115,94 ₸</div>
-                </div>
-                <div class="card-number" onclick="editCardNumber()">
-                    *6740 <span class="edit-hint">✎</span>
-                </div>
-            </div>
-
-            <div class="bank-actions">
-                <div class="action-btn" onclick="showScreen('transfer-to-client-screen')">
-                    <div class="action-icon">🔄</div>
-                    <div>Перевести</div>
-                </div>
-                <div class="action-btn">
-                    <div class="action-icon">💳</div>
-                    <div>Пополнить Kaspi Gold</div>
-                </div>
-                <div class="action-btn">
-                    <div class="action-icon"></div>
-                    <div>Оплата в интернете</div>
-                </div>
-                <div class="action-btn">
-                    <div class="action-icon">🍎</div>
-                    <div>Добавить в Apple Pay</div>
-                    <span class="new-badge">NEW</span>
-                </div>
-                <div class="action-btn">
-                    <div class="action-icon">🔄</div>
-                    <div>Платные сервисы и подписки</div>
-                </div>
-                <div class="action-btn">
-                    <div class="action-icon">💴</div>
-                    <div>Заказать сумму на снятие</div>
-                    <div class="action-subtitle">более 4 000 000 ₸</div>
-                </div>
-                <div class="action-btn">
-                    <div class="action-icon">🔄</div>
-                    <div>Перевыпустить Kaspi Gold</div>
-                </div>
-                <div class="action-btn">
-                    <div class="action-icon">✱</div>
-                    <div>Сменить ПИН-код</div>
-                </div>
-            </div>
-
-            <div class="bank-tabs">
-                <div class="tab" onclick="showBankTab('actions')">Действия</div>
-                <div class="tab" onclick="showBankTab('info')">Инфо</div>
-                <div class="tab active" onclick="showBankTab('statement')">Выписка</div>
-            </div>
-
-            <div class="statement-content" id="bank-statement">
-                <div class="statement-header">
-                    <div class="period">11 июня - 11 июля</div>
-                    <div class="summary">
-                        <div class="income">+ 48 089 ₸</div>
-                        <div class="expense">- 33 016,3 ₸</div>
-                    </div>
-                </div>
-                <div class="transactions" id="transactions-list">
-                    <!-- Транзакции загружаются из data.js -->
-                </div>
-            </div>
+        <div class="bank-actions">
+            <div class="action-btn" onclick="showScreen('transfer-to-client-screen')"><div class="action-icon">🔄</div><div>Перевести</div></div>
+            <div class="action-btn"><div class="action-icon">💳</div><div>Пополнить Kaspi Gold</div></div>
+            <div class="action-btn"><div class="action-icon">🌐</div><div>Оплата в интернете</div></div>
+            <div class="action-btn"><div class="action-icon">🍎</div><div>Добавить в Apple Pay</div><span class="new-badge">NEW</span></div>
+            <div class="action-btn"><div class="action-icon">🔄</div><div>Платные сервисы и подписки</div></div>
+            <div class="action-btn"><div class="action-icon">💴</div><div>Заказать сумму на снятие</div><div class="action-subtitle">более 4 000 000 ₸</div></div>
+            <div class="action-btn"><div class="action-icon">🔄</div><div>Перевыпустить Kaspi Gold</div></div>
+            <div class="action-btn"><div class="action-icon">✱</div><div>Сменить ПИН-код</div></div>
+            <div class="action-btn"><div class="action-icon">🔒</div><div>Заблокировать карту</div></div>
+            <div class="action-btn"><div class="action-icon">🏧</div><div>Снять деньги без карты</div></div>
+            <div class="action-btn"><div class="action-icon">❌</div><div>Закрыть Kaspi Gold</div></div>
         </div>
-
-        <nav class="bottom-nav">
-            <div class="nav-item" onclick="showScreen('main-screen')">
-                <div>🏠</div>
-                <div>Главная</div>
-            </div>
-            <div class="nav-item">
-                <div>📱</div>
-                <div>Kaspi QR</div>
-            </div>
-            <div class="nav-item">
-                <div>💬</div>
-                <div>Сообщения</div>
-                <span class="notification-badge">40</span>
-            </div>
-            <div class="nav-item">
-                <div>☰</div>
-                <div>Сервисы</div>
-            </div>
-        </nav>
-    </div>
-
-    <!-- ОСТАЛЬНЫЕ ЭКРАНЫ будут добавлены в следующем сообщении -->
-    <!-- Продолжение следует... -->
-
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="js/data.js"></script>
-    <script src="js/app.js"></script>
-</body>
-</html>
-    <!-- ЭКРАН ПЛАТЕЖИ -->
-    <div id="payments-screen" class="screen">
-        <div class="header">
-            <div class="back-btn" onclick="showScreen('main-screen')">←</div>
-            <div class="header-title">Платежи</div>
-            <div class="city-name">Семей</div>
+        <div class="bank-tabs">
+            <div class="tab" onclick="showBankTab('actions', this)">Действия</div>
+            <div class="tab" onclick="showBankTab('info', this)">Инфо</div>
+            <div class="tab active" onclick="showBankTab('statement', this)">Выписка</div>
         </div>
-        
-        <div class="payments-tabs">
-            <div class="tab active">Все</div>
-            <div class="tab">Мои платежи</div>
-            <div class="tab">История •</div>
-        </div>
-
-        <div class="search-bar">
-            <span>🔍</span>
-            <input type="text" placeholder="Что хотите оплатить?">
-        </div>
-
-        <div class="payments-categories">
-            <div class="category-item" onclick="showScreen('utilities-screen')">
-                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23e3342f'%3E%3Cpath d='M12 2L2 22h20L12 2zm0 4l6 13H6l6-13z'/%3E%3C/svg%3E" alt="Utilities">
-                <div>Коммуналка<br>и телефон</div>
-            </div>
-            <div class="category-item">
-                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23e3342f'%3E%3Cpath d='M17 2H7c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM7 4h10v16H7V4z'/%3E%3C/svg%3E" alt="Mobile">
-                <div>Мобильный</div>
-            </div>
-            <div class="category-item">
-                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23e3342f'%3E%3Cpath d='M20 18c1.1 0 1.99-.9 1.99-2L22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z'/%3E%3C/svg%3E" alt="Transport">
-                <div>Транспорт</div>
-            </div>
-            <div class="category-item">
-                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23e3342f'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z'/%3E%3C/svg%3E" alt="Internet">
-                <div>Интернет и ТВ</div>
-            </div>
-            <div class="category-item">
-                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23e3342f'%3E%3Cpath d='M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z'/%3E%3C/svg%3E" alt="Education">
-                <div>Образование</div>
-            </div>
-            <div class="category-item">
-                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23e3342f'%3E%3Cpath d='M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z'/%3E%3C/svg%3E" alt="Fines">
-                <div>Штрафы и<br>налоги</div>
-            </div>
-            <div class="category-item">
-                <div style="font-size: 40px; text-align: center;">❤️</div>
-                <div>Добрые дела</div>
-            </div>
-            <div class="category-item">
-                <div style="font-size: 40px; text-align: center;">💳</div>
-                <div>Финансовые<br>услуги</div>
-            </div>
-            <div class="category-item">
-                <div style="font-size: 40px; text-align: center;"></div>
-                <div>Красота и<br>здоровье</div>
-            </div>
-            <div class="category-item">
-                <div style="font-size: 40px; text-align: center;">🎟️</div>
-                <div>Билеты</div>
-            </div>
-            <div class="category-item">
-                <div style="font-size: 40px; text-align: center;">🛍️</div>
-                <div>Покупки и<br>заказы</div>
-            </div>
-            <div class="category-item">
-                <div style="font-size: 40px; text-align: center;">🌳</div>
-                <div>Развлечения<br>и отдых</div>
-            </div>
-            <div class="category-item">
-                <div style="font-size: 40px; text-align: center;">📢</div>
-                <div>Сайты<br>объявлений</div>
-            </div>
-            <div class="category-item">
-                <div style="font-size: 40px; text-align: center;">🎮</div>
-                <div>Игры</div>
-            </div>
-            <div class="category-item">
-                <div style="font-size: 40px; text-align: center;">💬</div>
-                <div>Другое</div>
-            </div>
-        </div>
-
-        <nav class="bottom-nav">
-            <div class="nav-item active">
-                <div>🏠</div>
-                <div>Главная</div>
-            </div>
-            <div class="nav-item">
-                <div>📱</div>
-                <div>Kaspi QR</div>
-            </div>
-            <div class="nav-item">
-                <div>💬</div>
-                <div>Сообщения</div>
-                <span class="notification-badge">40</span>
-            </div>
-            <div class="nav-item">
-                <div>☰</div>
-                <div>Сервисы</div>
-            </div>
-        </nav>
-    </div>
-
-    <!-- ЭКРАН КОММУНАЛКА -->
-    <div id="utilities-screen" class="screen">
-        <div class="header">
-            <div class="back-btn" onclick="showScreen('payments-screen')">←</div>
-            <div class="header-title">Коммуналка и телефон</div>
-            <div class="city-name">Семей</div>
-        </div>
-        
-        <div class="search-bar">
-            <span>🔍</span>
-            <input type="text" placeholder="Что хотите оплатить?">
-        </div>
-
-        <div class="utilities-list">
-            <div class="list-item">
-                <div class="list-icon">📄</div>
-                <div class="list-label">Квитанции за квартиру</div>
-                <div class="arrow">›</div>
-            </div>
-            <div class="list-item">
-                <div class="list-icon">⚡</div>
-                <div class="list-label">Электроэнергия</div>
-                <div class="arrow">›</div>
-            </div>
-            <div class="list-item">
-                <div class="list-icon">🔥</div>
-                <div class="list-label">Газ</div>
-                <div class="arrow">›</div>
-            </div>
-            <div class="list-item">
-                <div class="list-icon"></div>
-                <div class="list-label">Холодная вода и канализация</div>
-                <div class="arrow">›</div>
-            </div>
-            <div class="list-item">
-                <div class="list-icon">🌡️</div>
-                <div class="list-label">Горячая вода и отопление</div>
-                <div class="arrow">›</div>
-            </div>
-            <div class="list-item">
-                <div class="list-icon">🏢</div>
-                <div class="list-label">Услуги ЖКХ/КСК</div>
-                <div class="arrow">›</div>
-            </div>
-            <div class="list-item">
-                <div class="list-icon">🗑️</div>
-                <div class="list-label">Вывоз мусора</div>
-                <div class="arrow">›</div>
-            </div>
-            <div class="list-item">
-                <div class="list-icon"></div>
-                <div class="list-label">Лифты</div>
-                <div class="arrow">›</div>
-            </div>
-            <div class="list-item">
-                <div class="list-icon"></div>
-                <div class="list-label">Домофон и видеонаблюдение</div>
-                <div class="arrow">›</div>
-            </div>
-            <div class="list-item">
-                <div class="list-icon">🛡️</div>
-                <div class="list-label">Охранные агентства</div>
-                <div class="arrow">›</div>
-            </div>
-            <div class="list-item">
-                <div class="list-icon"></div>
-                <div class="list-label">Телефон</div>
-                <div class="arrow">›</div>
-            </div>
-        </div>
-
-        <nav class="bottom-nav">
-            <div class="nav-item active">
-                <div>🏠</div>
-                <div>Главная</div>
-            </div>
-            <div class="nav-item">
-                <div>📱</div>
-                <div>Kaspi QR</div>
-            </div>
-            <div class="nav-item">
-                <div>💬</div>
-                <div>Сообщения</div>
-                <span class="notification-badge">40</span>
-            </div>
-            <div class="nav-item">
-                <div>☰</div>
-                <div>Сервисы</div>
-            </div>
-        </nav>
-    </div>
-
-    <!-- ЭКРАН ПЕРЕВОДЫ -->
-    <div id="transfers-screen" class="screen">
-        <div class="header">
-            <div class="back-btn" onclick="showScreen('main-screen')">←</div>
-            <div class="header-title">Переводы</div>
-        </div>
-        
-        <div class="transfers-tabs">
-            <div class="tab active">Мои Переводы</div>
-            <div class="tab" onclick="showTransferHistory()">История</div>
-        </div>
-
-        <div class="transfers-list">
-            <div class="transfer-item" onclick="alert('Перевод между своими счетами')">
-                <div class="transfer-icon">🔄</div>
-                <div class="transfer-info">
-                    <div class="transfer-title">Между своими счетами</div>
-                </div>
-                <div class="arrow">›</div>
-            </div>
-            <div class="transfer-item" onclick="showScreen('transfer-to-client-screen')">
-                <div class="transfer-icon"></div>
-                <div class="transfer-info">
-                    <div class="transfer-title">Клиенту Kaspi</div>
-                    <div class="transfer-subtitle">На карту Kaspi Gold</div>
-                </div>
-                <div class="arrow">›</div>
-            </div>
-            <div class="transfer-item">
-                <div class="transfer-icon">💳</div>
-                <div class="transfer-info">
-                    <div class="transfer-title">Карта другого банка</div>
-                    <div class="transfer-subtitle">С карты на карту</div>
-                </div>
-                <div class="arrow">›</div>
-            </div>
-            <div class="transfer-item">
-                <div class="transfer-icon">🌐</div>
-                <div class="transfer-info">
-                    <div class="transfer-title">Международные переводы</div>
-                    <div class="transfer-subtitle">По номеру карты или телефона</div>
-                </div>
-                <div class="arrow">›</div>
-            </div>
-            <div class="transfer-item" onclick="showScreen('qr-screen')">
-                <div class="transfer-icon">📱</div>
-                <div class="transfer-info">
-                    <div class="transfer-title">Kaspi QR</div>
-                    <div class="transfer-subtitle">Сканируйте и платите</div>
-                </div>
-                <div class="arrow">›</div>
-            </div>
-        </div>
-
-        <nav class="bottom-nav">
-            <div class="nav-item" onclick="showScreen('main-screen')">
-                <div>🏠</div>
-                <div>Главная</div>
-            </div>
-            <div class="nav-item" onclick="showScreen('qr-screen')">
-                <div>📱</div>
-                <div>Kaspi QR</div>
-            </div>
-            <div class="nav-item">
-                <div>💬</div>
-                <div>Сообщения</div>
-                <span class="notification-badge">40</span>
-            </div>
-            <div class="nav-item">
-                <div>☰</div>
-                <div>Сервисы</div>
-            </div>
-        </nav>
-    </div>
-
-    <!-- ЭКРАН KASPI QR -->
-    <div id="qr-screen" class="screen">
-        <div class="header">
-            <div class="back-btn" onclick="showScreen('main-screen')">←</div>
-            <div class="header-title">Kaspi QR</div>
-            <div class="close-btn" onclick="showScreen('main-screen')"></div>
-        </div>
-        
-        <div class="qr-content">
-            <div class="qr-instruction">Сканируйте QR-код</div>
-            <div class="qr-scanner" id="qr-scanner">
-                <video id="qr-video" autoplay playsinline></video>
-                <div class="qr-frame">
-                    <div class="corner top-left"></div>
-                    <div class="corner top-right"></div>
-                    <div class="corner bottom-left"></div>
-                    <div class="corner bottom-right"></div>
-                </div>
-                <div class="flashlight-btn" onclick="toggleFlashlight()">
-                    🔦
-                </div>
-            </div>
-            <div class="qr-options">
-                <div class="qr-option">
-                    <div class="option-badge yellow">0·0·24</div>
-                    <div>Рассрочка 0-0-24</div>
-                    <div class="arrow">›</div>
-                </div>
-                <div class="qr-option">
-                    <div class="option-badge yellow">0·0·12</div>
-                    <div>Рассрочка 0-0-12</div>
-                    <div class="arrow">›</div>
-                </div>
-                <div class="qr-option">
-                    <div class="option-badge red">Red+</div>
-                    <div>Kaspi Red+ 0-0-4<br><small>Рассрочка до 500 000 ₸</small></div>
-                    <div class="arrow">›</div>
-                </div>
-                <div class="qr-option">
-                    <div>Кредит на Покупки</div>
-                    <div class="arrow">›</div>
-                </div>
-            </div>
+        <div class="statement-content" id="bank-statement">
+            <div class="statement-header"><div class="period">11 июня - 11 июля</div><div class="summary"><div class="income">+ 48 089 ₸</div><div class="expense">- 33 016,3 </div></div></div>
+            <div class="transactions" id="transactions-list"></div>
         </div>
     </div>
+    <nav class="bottom-nav">
+        <div class="nav-item" onclick="showScreen('main-screen')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg><div>Главная</div></div>
+        <div class="nav-item" onclick="showScreen('qr-screen')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg><div>Kaspi QR</div></div>
+        <div class="nav-item" onclick="showScreen('messages-screen')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg><div>Сообщения</div><span class="notification-badge">40</span></div>
+        <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg><div>Сервисы</div></div>
+    </nav>
+</div>
 
-    <!-- ЭКРАН СООБЩЕНИЯ -->
-    <div id="messages-screen" class="screen">
-        <div class="header">
-            <div class="back-btn" onclick="showScreen('main-screen')">←</div>
-            <div class="header-title">Сообщения</div>
-        </div>
-        
-        <div class="messages-list" id="messages-list">
-            <!-- Сообщения загружаются из data.js -->
-        </div>
-
-        <nav class="bottom-nav">
-            <div class="nav-item" onclick="showScreen('main-screen')">
-                <div>🏠</div>
-                <div>Главная</div>
-            </div>
-            <div class="nav-item" onclick="showScreen('qr-screen')">
-                <div>📱</div>
-                <div>Kaspi QR</div>
-            </div>
-            <div class="nav-item active">
-                <div>💬</div>
-                <div>Сообщения</div>
-                <span class="notification-badge">40</span>
-            </div>
-            <div class="nav-item">
-                <div>☰</div>
-                <div>Сервисы</div>
-            </div>
-        </nav>
+<!-- ЭКРАН ПЛАТЕЖИ -->
+<div id="payments-screen" class="screen">
+    <div class="header"><div class="back-btn" onclick="showScreen('main-screen')">←</div><div class="header-title">Платежи</div><div class="city-name">Семей</div></div>
+    <div class="payments-tabs"><div class="tab active">Все</div><div class="tab">Мои платежи</div><div class="tab">История •</div></div>
+    <div class="search-bar"><span>🔍</span><input type="text" placeholder="Что хотите оплатить?"></div>
+    <div class="payments-categories">
+        <div class="category-item" onclick="showScreen('utilities-screen')"><div class="cat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#e3342f" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg></div><div>Коммуналка<br>и телефон</div></div>
+        <div class="category-item"><div class="cat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#e3342f" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></div><div>Мобильный</div></div>
+        <div class="category-item"><div class="cat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#e3342f" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16,8 20,8 23,11 23,16 16,16 16,8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div><div>Транспорт</div></div>
+        <div class="category-item"><div class="cat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#e3342f" stroke-width="2"><path d="M5 12.55a11 11 0 0114.08 0"/><path d="M1.42 9a16 16 0 0121.16 0"/><path d="M8.53 16.11a6 6 0 016.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg></div><div>Интернет и ТВ</div></div>
+        <div class="category-item"><div class="cat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#e3342f" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg></div><div>Образование</div></div>
+        <div class="category-item"><div class="cat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#e3342f" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><div>Штрафы и<br>налоги</div></div>
+        <div class="category-item"><div class="cat-icon"><svg viewBox="0 0 24 24" fill="#e3342f"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg></div><div>Добрые дела</div></div>
+        <div class="category-item"><div class="cat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#e3342f" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></div><div>Финансовые<br>услуги</div></div>
+        <div class="category-item"><div class="cat-icon"><svg viewBox="0 0 24 24" fill="#e3342f"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg></div><div>Красота и<br>здоровье</div></div>
+        <div class="category-item"><div class="cat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#e3342f" stroke-width="2"><path d="M1 4h22v16H1z"/><path d="M1 10h22"/><path d="M1 14h22"/></svg></div><div>Билеты</div></div>
+        <div class="category-item"><div class="cat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#e3342f" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg></div><div>Покупки и<br>заказы</div></div>
+        <div class="category-item"><div class="cat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#e3342f" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div><div>Развлечения<br>и отдых</div></div>
+        <div class="category-item"><div class="cat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#e3342f" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg></div><div>Сайты<br>объявлений</div></div>
+        <div class="category-item"><div class="cat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#e3342f" stroke-width="2"><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="15" y1="13" x2="15.01" y2="13"/><line x1="18" y1="11" x2="18.01" y2="11"/><rect x="2" y="6" width="20" height="12" rx="2"/></svg></div><div>Игры</div></div>
+        <div class="category-item"><div class="cat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#e3342f" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></div><div>Другое</div></div>
     </div>
+    <nav class="bottom-nav">
+        <div class="nav-item active" onclick="showScreen('main-screen')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg><div>Главная</div></div>
+        <div class="nav-item" onclick="showScreen('qr-screen')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg><div>Kaspi QR</div></div>
+        <div class="nav-item" onclick="showScreen('messages-screen')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg><div>Сообщения</div><span class="notification-badge">40</span></div>
+        <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg><div>Сервисы</div></div>
+    </nav>
+</div>
 
-    <!-- ЭКРАН ГОСУСЛУГИ -->
-    <div id="gosuslugi-screen" class="screen">
-        <div class="header">
-            <div class="back-btn" onclick="showScreen('main-screen')">←</div>
-            <div class="header-title">Госуслуги</div>
-        </div>
-        
-        <div class="gosuslugi-tabs">
-            <div class="tab active">Все услуги</div>
-            <div class="tab">Мои заявки</div>
-        </div>
-
-        <div class="gosuslugi-categories">
-            <div class="category-icon" onclick="selectGosuslugiCategory('popular')">
-                <div>📢</div>
-                <div>Популярные</div>
-            </div>
-            <div class="category-icon" onclick="selectGosuslugiCategory('certificates')">
-                <div>📄</div>
-                <div>Справки</div>
-            </div>
-            <div class="category-icon" onclick="selectGosuslugiCategory('auto')">
-                <div>🚗</div>
-                <div>Авто</div>
-            </div>
-            <div class="category-icon" onclick="selectGosuslugiCategory('housing')">
-                <div>🏠</div>
-                <div>Жилье</div>
-            </div>
-            <div class="category-icon" onclick="selectGosuslugiCategory('family')">
-                <div>👶</div>
-                <div>Семья</div>
-            </div>
-            <div class="category-icon" onclick="selectGosuslugiCategory('benefits')">
-                <div></div>
-                <div>Пособия</div>
-            </div>
-            <div class="category-icon" onclick="selectGosuslugiCategory('business')">
-                <div></div>
-                <div>Бизнес</div>
-            </div>
-            <div class="category-icon" onclick="selectGosuslugiCategory('payments')">
-                <div>💳</div>
-                <div>Платежи</div>
-            </div>
-            <div class="category-icon" onclick="selectGosuslugiCategory('other')">
-                <div></div>
-                <div>Другие</div>
-            </div>
-        </div>
-
-        <div class="gosuslugi-content" id="gosuslugi-content">
-            <div class="section-title">Популярные и новые</div>
-            <div class="gosuslugi-list">
-                <div class="gosuslugi-item" onclick="showScreen('id-card-screen')">
-                    <div class="gosuslugi-icon">📱</div>
-                    <div class="gosuslugi-info">
-                        <div class="gosuslugi-title">Цифровые документы</div>
-                        <div class="gosuslugi-subtitle">Удостоверение, Водительские права, Паспорт гражданина РК</div>
-                    </div>
-                    <div class="arrow">›</div>
-                </div>
-                <div class="gosuslugi-item">
-                    <div class="gosuslugi-icon">👥</div>
-                    <div class="gosuslugi-info">
-                        <div class="gosuslugi-title">Стать самозанятым</div>
-                        <div class="gosuslugi-subtitle">Открыть счет и начать принимать оплату в Kaspi.kz</div>
-                    </div>
-                    <div class="arrow">›</div>
-                </div>
-                <div class="gosuslugi-item">
-                    <div class="gosuslugi-icon">🚗</div>
-                    <div class="gosuslugi-info">
-                        <div class="gosuslugi-title">Пере оформление автомобиля</div>
-                    </div>
-                    <div class="arrow">›</div>
-                </div>
-                <div class="gosuslugi-item">
-                    <div class="gosuslugi-icon">🏠</div>
-                    <div class="gosuslugi-info">
-                        <div class="gosuslugi-title">Проверка прописки</div>
-                    </div>
-                    <div class="badge new">NEW</div>
-                    <div class="arrow">›</div>
-                </div>
-                <div class="gosuslugi-item">
-                    <div class="gosuslugi-icon">🏠</div>
-                    <div class="gosuslugi-info">
-                        <div class="gosuslugi-title">Прописка</div>
-                        <div class="gosuslugi-subtitle">Временная и постоянная</div>
-                    </div>
-                    <div class="arrow">›</div>
-                </div>
-                <div class="gosuslugi-item">
-                    <div class="gosuslugi-icon">🪪</div>
-                    <div class="gosuslugi-info">
-                        <div class="gosuslugi-title">Замена водительских прав</div>
-                    </div>
-                    <div class="arrow">›</div>
-                </div>
-            </div>
-        </div>
-
-        <nav class="bottom-nav">
-            <div class="nav-item active">
-                <div>🏠</div>
-                <div>Главная</div>
-            </div>
-            <div class="nav-item">
-                <div>📱</div>
-                <div>Kaspi QR</div>
-            </div>
-            <div class="nav-item">
-                <div>💬</div>
-                <div>Сообщения</div>
-                <span class="notification-badge">40</span>
-            </div>
-            <div class="nav-item">
-                <div>☰</div>
-                <div>Сервисы</div>
-            </div>
-        </nav>
+<!-- ЭКРАН КОММУНАЛКА -->
+<div id="utilities-screen" class="screen">
+    <div class="header"><div class="back-btn" onclick="showScreen('payments-screen')">←</div><div class="header-title">Коммуналка и телефон</div><div class="city-name">Семей</div></div>
+    <div class="search-bar"><span>🔍</span><input type="text" placeholder="Что хотите оплатить?"></div>
+    <div class="utilities-list">
+        <div class="list-item"><div class="list-icon">📄</div><div class="list-label">Квитанции за квартиру</div><div class="arrow">›</div></div>
+        <div class="list-item"><div class="list-icon">⚡</div><div class="list-label">Электроэнергия</div><div class="arrow">›</div></div>
+        <div class="list-item"><div class="list-icon"></div><div class="list-label">Газ</div><div class="arrow">›</div></div>
+        <div class="list-item"><div class="list-icon">💧</div><div class="list-label">Холодная вода и канализация</div><div class="arrow">›</div></div>
+        <div class="list-item"><div class="list-icon">🌡️</div><div class="list-label">Горячая вода и отопление</div><div class="arrow">›</div></div>
+        <div class="list-item"><div class="list-icon">🏢</div><div class="list-label">Услуги ЖКХ/КСК</div><div class="arrow">›</div></div>
+        <div class="list-item"><div class="list-icon">🗑️</div><div class="list-label">Вывоз мусора</div><div class="arrow">›</div></div>
+        <div class="list-item"><div class="list-icon">🛗</div><div class="list-label">Лифты</div><div class="arrow">›</div></div>
+        <div class="list-item"><div class="list-icon">📹</div><div class="list-label">Домофон и видеонаблюдение</div><div class="arrow">›</div></div>
+        <div class="list-item"><div class="list-icon">🛡️</div><div class="list-label">Охранные агентства</div><div class="arrow">›</div></div>
+        <div class="list-item"><div class="list-icon">📞</div><div class="list-label">Телефон</div><div class="arrow">›</div></div>
     </div>
+    <nav class="bottom-nav">
+        <div class="nav-item active" onclick="showScreen('main-screen')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg><div>Главная</div></div>
+        <div class="nav-item" onclick="showScreen('qr-screen')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg><div>Kaspi QR</div></div>
+        <div class="nav-item" onclick="showScreen('messages-screen')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg><div>Сообщения</div><span class="notification-badge">40</span></div>
+        <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg><div>Сервисы</div></div>
+    </nav>
+</div>
 
-    <!-- ЭКРАН УДОСТОВЕРЕНИЕ ЛИЧНОСТИ -->
-    <div id="id-card-screen" class="screen">
-        <div class="header">
-            <div class="back-btn" onclick="showScreen('gosuslugi-screen')">←</div>
-            <div class="header-title">Удостоверение личности</div>
-        </div>
-        
-        <div class="egov-loading" id="egov-loading">
-            <div class="egov-logos">
-                <div class="egov-logo">e.gov</div>
-                <div class="plus">+</div>
-                <div class="kaspi-logo"></div>
-            </div>
-            <div class="loading-text">При поддержке Министерства цифрового развития</div>
-        </div>
+<!-- ЭКРАН ПЕРЕВОДЫ -->
+<div id="transfers-screen" class="screen">
+    <div class="header"><div class="back-btn" onclick="showScreen('main-screen')">←</div><div class="header-title">Переводы</div></div>
+    <div class="transfers-tabs"><div class="tab active">Мои Переводы</div><div class="tab" onclick="showTransferHistory()">История</div></div>
+    <div class="transfers-list">
+        <div class="transfer-item"><div class="transfer-icon">🔄</div><div class="transfer-info"><div class="transfer-title">Между своими счетами</div></div><div class="arrow">›</div></div>
+        <div class="transfer-item" onclick="showScreen('transfer-to-client-screen')"><div class="transfer-icon"></div><div class="transfer-info"><div class="transfer-title">Клиенту Kaspi</div><div class="transfer-subtitle">На карту Kaspi Gold</div></div><div class="arrow">›</div></div>
+        <div class="transfer-item"><div class="transfer-icon">💳</div><div class="transfer-info"><div class="transfer-title">Карта другого банка</div><div class="transfer-subtitle">С карты на карту</div></div><div class="arrow">›</div></div>
+        <div class="transfer-item"><div class="transfer-icon">🌐</div><div class="transfer-info"><div class="transfer-title">Международные переводы</div><div class="transfer-subtitle">По номеру карты или телефона</div></div><div class="arrow">›</div></div>
+        <div class="transfer-item" onclick="showScreen('qr-screen')"><div class="transfer-icon"></div><div class="transfer-info"><div class="transfer-title">Kaspi QR</div><div class="transfer-subtitle">Сканируйте и платите</div></div><div class="arrow">›</div></div>
+    </div>
+    <nav class="bottom-nav">
+        <div class="nav-item" onclick="showScreen('main-screen')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg><div>Главная</div></div>
+        <div class="nav-item" onclick="showScreen('qr-screen')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg><div>Kaspi QR</div></div>
+        <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg><div>Сообщения</div><span class="notification-badge">40</span></div>
+        <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg><div>Сервисы</div></div>
+    </nav>
+</div>
 
-        <div class="document-content" id="id-card-content">
-            <div class="document-tabs">
-                <div class="doc-tab active">Документ</div>
-                <div class="doc-tab" onclick="showDocumentRequisites('id-card')">Реквизиты</div>
+<!-- ЭКРАН ПЕРЕВОД КЛИЕНТУ -->
+<div id="transfer-to-client-screen" class="screen">
+    <div class="header"><div class="back-btn" onclick="showScreen('transfers-screen')">←</div><div class="header-title">Клиенту Kaspi</div></div>
+    <div style="padding: 16px;">
+        <div style="background: linear-gradient(135deg, #f6d365 0%, #fda085 100%); border-radius: 12px; padding: 16px; color: #fff; margin-bottom: 16px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="font-size: 24px;">🏦</div>
+                <div><div style="font-size: 16px; font-weight: 600;">Kaspi Gold</div><div style="font-size: 20px; font-weight: 700;" id="transfer-balance">16 115,94 ₸</div></div>
             </div>
-            
-            <div class="document-view" id="id-card-view">
+        </div>
+        <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+            <div style="flex: 1; padding: 10px; background: #e3342f; color: #fff; border-radius: 8px; text-align: center; font-size: 14px;">Телефон</div>
+            <div style="flex: 1; padding: 10px; background: #f8f9fa; border-radius: 8px; text-align: center; font-size: 14px;">Карта</div>
+            <div style="flex: 1; padding: 10px; background: #f8f9fa; border-radius: 8px; text-align: center; font-size: 14px;">Kaspi QR</div>
+        </div>
+        <div style="margin-bottom: 16px;">
+            <div style="font-size: 13px; color: #007aff; margin-bottom: 4px;">Телефон получателя</div>
+            <input type="tel" placeholder="+7 ( ) - -" style="width: 100%; padding: 12px; border: none; border-bottom: 2px solid #007aff; font-size: 18px; outline: none;">
+        </div>
+        <input type="number" placeholder="0 ₸" style="width: 100%; padding: 16px; background: #f8f9fa; border: none; border-radius: 12px; font-size: 20px; margin-bottom: 16px; outline: none;">
+        <input type="text" placeholder="Сообщение получателю" style="width: 100%; padding: 12px; background: #f8f9fa; border: none; border-radius: 12px; font-size: 15px; margin-bottom: 16px; outline: none;">
+        <button style="width: 100%; padding: 16px; background: #007aff; color: #fff; border: none; border-radius: 12px; font-size: 18px; font-weight: 600; cursor: pointer;">Перевести 0 ₸</button>
+    </div>
+</div>
+
+<!-- ЭКРАН KASPI QR -->
+<div id="qr-screen" class="screen">
+    <div class="header"><div class="back-btn" onclick="showScreen('main-screen')">←</div><div class="header-title">Kaspi QR</div><div style="width: 30px; text-align: right; cursor: pointer;" onclick="showScreen('main-screen')">✕</div></div>
+    <div class="qr-content">
+        <div class="qr-instruction">Сканируйте QR-код</div>
+        <div class="qr-scanner">
+            <video id="qr-video" autoplay playsinline></video>
+            <div class="qr-frame">
+                <div class="corner top-left"></div>
+                <div class="corner top-right"></div>
+                <div class="corner bottom-left"></div>
+                <div class="corner bottom-right"></div>
+            </div>
+            <div class="flashlight-btn" onclick="toggleFlashlight()">🔦</div>
+        </div>
+        <div class="qr-options">
+            <div style="font-size: 18px; font-weight: 600; margin-bottom: 12px;">Оформить онлайн</div>
+            <div class="qr-option"><div class="option-badge yellow">0·0·24</div><div>Рассрочка 0-0-24</div><div class="arrow">›</div></div>
+            <div class="qr-option"><div class="option-badge yellow">0·0·12</div><div>Рассрочка 0-0-12</div><div class="arrow">›</div></div>
+            <div class="qr-option"><div class="option-badge red">Red+</div><div>Kaspi Red+ 0-0-4<br><small>Рассрочка до 500 000 ₸</small></div><div class="arrow">›</div></div>
+            <div class="qr-option"><div>Кредит на Покупки</div><div class="arrow">›</div></div>
+        </div>
+    </div>
+</div>
+
+<!-- ЭКРАН СООБЩЕНИЯ -->
+<div id="messages-screen" class="screen">
+    <div class="header"><div class="back-btn" onclick="showScreen('main-screen')">←</div><div class="header-title">Сообщения</div></div>
+    <div class="messages-list" id="messages-list"></div>
+    <nav class="bottom-nav">
+        <div class="nav-item" onclick="showScreen('main-screen')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg><div>Главная</div></div>
+        <div class="nav-item" onclick="showScreen('qr-screen')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg><div>Kaspi QR</div></div>
+        <div class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg><div>Сообщения</div><span class="notification-badge">40</span></div>
+        <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg><div>Сервисы</div></div>
+    </nav>
+</div>
+
+<!-- ЭКРАН ЧАТ KASPI GOLD -->
+<div id="chat-gold-screen" class="screen">
+    <div class="header"><div class="back-btn" onclick="showScreen('messages-screen')">←</div><div class="header-title">Kaspi Gold</div></div>
+    <div id="chat-messages" style="padding: 16px; flex: 1; overflow-y: auto;"></div>
+    <div style="position: fixed; bottom: 60px; left: 0; right: 0; padding: 12px 16px; background: #fff; border-top: 1px solid #e0e0e0; display: flex; gap: 8px;">
+        <input type="text" id="chat-input" placeholder="Сообщение" style="flex: 1; padding: 12px; border: 1px solid #e0e0e0; border-radius: 20px; outline: none; font-size: 15px;">
+        <button onclick="sendChatMessage()" style="padding: 12px 20px; background: #007aff; color: #fff; border: none; border-radius: 20px; font-size: 15px; cursor: pointer;">➤</button>
+    </div>
+</div>
+
+<!-- ЭКРАН ГОСУСЛУГИ -->
+<div id="gosuslugi-screen" class="screen">
+    <div class="header"><div class="back-btn" onclick="showScreen('main-screen')">←</div><div class="header-title">Госуслуги</div></div>
+    <div class="gosuslugi-tabs"><div class="tab active">Все услуги</div><div class="tab">Мои заявки</div></div>
+    <div class="search-bar" style="margin: 12px 16px;"><span>🔍</span><input type="text" placeholder="Поиск по Госуслугам"></div>
+    <div class="gosuslugi-categories">
+        <div class="category-icon" onclick="selectGosuslugiCategory('popular', this)"><div>📢</div><div>Популярные</div></div>
+        <div class="category-icon" onclick="selectGosuslugiCategory('certificates', this)"><div>📄</div><div>Справки</div></div>
+        <div class="category-icon" onclick="selectGosuslugiCategory('auto', this)"><div></div><div>Авто</div></div>
+        <div class="category-icon" onclick="selectGosuslugiCategory('housing', this)"><div>🏠</div><div>Жилье</div></div>
+        <div class="category-icon" onclick="selectGosuslugiCategory('family', this)"><div>👶</div><div>Семья</div></div>
+        <div class="category-icon" onclick="selectGosuslugiCategory('benefits', this)"><div>💰</div><div>Пособия</div></div>
+        <div class="category-icon" onclick="selectGosuslugiCategory('business', this)"><div>💼</div><div>Бизнес</div></div>
+        <div class="category-icon" onclick="selectGosuslugiCategory('payments', this)"><div>💳</div><div>Платежи</div></div>
+        <div class="category-icon" onclick="selectGosuslugiCategory('other', this)"><div>•••</div><div>Другие</div></div>
+    </div>
+    <div class="gosuslugi-content">
+        <div class="section-title">Популярные и новые</div>
+        <div class="gosuslugi-list">
+            <div class="gosuslugi-item" onclick="showScreen('id-card-screen')"><div class="gosuslugi-icon">📱</div><div class="gosuslugi-info"><div class="gosuslugi-title">Цифровые документы</div><div class="gosuslugi-subtitle">Удостоверение, Водительские права, Паспорт гражданина РК</div></div><div class="arrow">›</div></div>
+            <div class="gosuslugi-item"><div class="gosuslugi-icon">👥</div><div class="gosuslugi-info"><div class="gosuslugi-title">Стать самозанятым</div><div class="gosuslugi-subtitle">Открыть счет и начать принимать оплату в Kaspi.kz</div></div><div class="arrow">›</div></div>
+            <div class="gosuslugi-item"><div class="gosuslugi-icon">🚗</div><div class="gosuslugi-info"><div class="gosuslugi-title">Пере оформление автомобиля</div></div><div class="arrow">›</div></div>
+            <div class="gosuslugi-item"><div class="gosuslugi-icon">🏠</div><div class="gosuslugi-info"><div class="gosuslugi-title">Проверка прописки</div></div><div class="badge-new">NEW</div><div class="arrow">›</div></div>
+            <div class="gosuslugi-item"><div class="gosuslugi-icon">🏠</div><div class="gosuslugi-info"><div class="gosuslugi-title">Прописка</div><div class="gosuslugi-subtitle">Временная и постоянная</div></div><div class="arrow">›</div></div>
+            <div class="gosuslugi-item"><div class="gosuslugi-icon"></div><div class="gosuslugi-info"><div class="gosuslugi-title">Замена водительских прав</div></div><div class="arrow">›</div></div>
+        </div>
+    </div>
+    <nav class="bottom-nav">
+        <div class="nav-item active" onclick="showScreen('main-screen')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg><div>Главная</div></div>
+        <div class="nav-item" onclick="showScreen('qr-screen')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg><div>Kaspi QR</div></div>
+        <div class="nav-item" onclick="showScreen('messages-screen')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg><div>Сообщения</div><span class="notification-badge">33</span></div>
+        <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg><div>Сервисы</div></div>
+    </nav>
+</div>
+
+<!-- ЭКРАН ЗАГРУЗКИ EGОВ -->
+<div id="egov-loading-screen" class="screen">
+    <div class="egov-loading">
+        <div class="egov-logos">
+            <div class="egov-logo">e.gov</div>
+            <div class="egov-plus">+</div>
+            <div class="kaspi-circle"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg></div>
+        </div>
+        <div class="loading-text">При поддержке Министерства цифрового развития</div>
+    </div>
+</div>
+
+<!-- ЭКРАН УДОСТОВЕРЕНИЕ ЛИЧНОСТИ -->
+<div id="id-card-screen" class="screen">
+    <div class="header"><div class="back-btn" onclick="showScreen('gosuslugi-screen')">←</div><div class="header-title">Удостоверение личности</div></div>
+    <div class="document-content">
+        <div class="document-tabs">
+            <div class="doc-tab active" id="id-doc-tab" onclick="switchDocTab('id', 'document')">Документ</div>
+            <div class="doc-tab" id="id-req-tab" onclick="switchDocTab('id', 'requisites')">Реквизиты</div>
+        </div>
+        <div id="id-document-view">
+            <div class="document-view">
                 <div class="id-card-front">
-                    <div class="id-header">
-                        <div>ҚАЗАҚСТАН РЕСПУБЛИКАСЫ</div>
-                        <div>РЕСПУБЛИКА КАЗАХСТАН</div>
-                        <div>ЖЕКЕ КУӘЛІК</div>
-                        <div>УДОСТОВЕРЕНИЕ ЛИЧНОСТИ</div>
-                    </div>
+                    <div class="id-header"><div>ҚАЗАҚСТАН РЕСПУБЛИКАСЫ</div><div>РЕСПУБЛИКА КАЗАХСТАН</div><div>ЖЕКЕ КУӘЛІК</div><div>УДОСТОВЕРЕНИЕ ЛИЧНОСТИ</div></div>
                     <div class="id-photo-section">
-                        <img src="https://i.pravatar.cc/150?img=11" alt="Photo" class="id-photo" id="id-card-photo">
+                        <img src="https://i.pravatar.cc/150?img=11" alt="Photo" class="id-photo" id="id-card-photo" onclick="addDocumentPhoto('id')">
                         <div class="id-info">
-                            <div class="id-field">
-                                <div class="field-label">ТЕГІ / ФАМИЛИЯ</div>
-                                <div class="field-value" id="id-surname">ЧНЕГОВ</div>
-                            </div>
-                            <div class="id-field">
-                                <div class="field-label">АТЫ / ИМЯ</div>
-                                <div class="field-value" id="id-name">РУСЛАН</div>
-                            </div>
-                            <div class="id-field">
-                                <div class="field-label">ӘКЕСІНІҢ АТЫ / ОТЧЕСТВО</div>
-                                <div class="field-value" id="id-patronymic">АЛЕКСАНДРОВИЧ</div>
-                            </div>
-                            <div class="id-field">
-                                <div class="field-label">ТУҒАН КҮНІ / ДАТА РОЖДЕНИЯ</div>
-                                <div class="field-value" id="id-birthdate">28.04.2007</div>
-                            </div>
+                            <div class="id-field"><div class="field-label">ТЕГІ / ФАМИЛИЯ</div><div class="field-value" id="id-surname">ЧНЕГОВ</div></div>
+                            <div class="id-field"><div class="field-label">АТЫ / ИМЯ</div><div class="field-value" id="id-name">РУСЛАН</div></div>
+                            <div class="id-field"><div class="field-label">ӘКЕСІНІ АТЫ / ОТЧЕСТВО</div><div class="field-value" id="id-patronymic">АЛЕКСАНДРОВИЧ</div></div>
+                            <div class="id-field"><div class="field-label">ТУҒАН КҮНІ / ДАТА РОЖДЕНИЯ</div><div class="field-value" id="id-birthdate">28.04.2007</div></div>
                         </div>
                     </div>
-                    <div class="id-iin">
-                        <div>ЖСН / ИИН</div>
-                        <div id="id-iin">070428552045</div>
-                    </div>
+                    <div class="id-iin"><div>ЖСН / ИИН</div><div id="id-iin-value">070428552045</div></div>
                 </div>
                 <div class="id-card-back">
-                    <div class="id-back-row">
-                        <div class="barcode">||||||||||||||||||</div>
-                        <div class="flag">🇿</div>
-                        <div class="doc-number" id="id-number">055297744</div>
-                    </div>
-                    <div class="id-back-field">
-                        <div class="field-label">ТУҒАН ЖЕРІ / МЕСТО РОЖДЕНИЯ</div>
-                        <div class="field-value" id="id-birthplace">ОБЛАСТЬ АБАЙ</div>
-                    </div>
-                    <div class="id-back-field">
-                        <div class="field-label">ҰЛТЫ / НАЦИОНАЛЬНОСТЬ</div>
-                        <div class="field-value" id="id-nationality">РУССКИЙ</div>
-                    </div>
-                    <div class="id-back-field">
-                        <div class="field-label">БЕРГЕН ОРГАН / ОРГАН ВЫДАЧИ</div>
-                        <div class="field-value">МИНИСТЕРСТВО ВНУТРЕННИХ ДЕЛ РК</div>
-                    </div>
-                    <div class="id-back-field">
-                        <div class="field-label">БЕРІЛГЕН КҮНІ – ҚОЛДАНЫЛУ МЕРЗІМІ</div>
-                        <div class="field-label">ДАТА ВЫДАЧИ – СРОК ДЕЙСТВИЯ</div>
-                        <div class="field-value" id="id-dates">03.05.2023 - 02.05.2033</div>
-                    </div>
-                    <div class="mrz">
-                        <div>&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;</div>
-                        <div>CHNEGOV&lt;&lt;RUSLAN&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;</div>
-                        <div>&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;</div>
-                    </div>
+                    <div class="id-back-row"><div class="barcode">||||||||||||||||||</div><div class="flag-icon"></div><div class="doc-number" id="id-number-value">055297744</div></div>
+                    <div class="id-back-field"><div class="field-label">ТУҒАН ЖЕРІ / МЕСТО РОЖДЕНИЯ</div><div class="field-value" id="id-birthplace">ОБЛАСТЬ АБАЙ</div></div>
+                    <div class="id-back-field"><div class="field-label">ҰЛТЫ / НАЦИОНАЛЬНОСТЬ</div><div class="field-value" id="id-nationality">РУССКИЙ</div></div>
+                    <div class="id-back-field"><div class="field-label">БЕРГЕН ОРГАН / ОРГАН ВЫДАЧИ</div><div class="field-value">МИНИСТЕРСТВО ВНУТРЕННИХ ДЕЛ РК</div></div>
+                    <div class="id-back-field"><div class="field-label">БЕРІЛГЕН КҮНІ – ҚОЛДАНЫЛУ МЕРЗІМІ / ДАТА ВЫДАЧИ – СРОК ДЕЙСТВИЯ</div><div class="field-value" id="id-dates">03.05.2023 - 02.05.2033</div></div>
+                    <div class="mrz"><div>&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;</div><div>CHNEGOV&lt;&lt;RUSLAN&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;</div><div>&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;</div></div>
                 </div>
             </div>
         </div>
-
-        <div class="document-actions">
-            <button class="btn-primary" onclick="presentDocument('id-card')">
-                📱 Предъявить документ
-            </button>
-            <button class="btn-secondary" onclick="sendDocument('id-card')">
-                ⬆ Отправить документ
-            </button>
+        <div id="id-requisites-view" style="display: none;">
+            <div class="requisites-list">
+                <div class="req-item"><div><div class="req-label">ФИО</div><div class="req-value" id="req-id-fio">Чнегов Руслан Александрович</div></div><div class="req-copy" onclick="copyText('req-id-fio')">📋</div></div>
+                <div class="req-item"><div><div class="req-label">ИИН</div><div class="req-value" id="req-id-iin">070428552045</div></div><div class="req-copy" onclick="copyText('req-id-iin')">📋</div></div>
+                <div class="req-item"><div><div class="req-label">Дата рождения</div><div class="req-value" id="req-id-birth">28.04.2007</div></div><div class="req-copy" onclick="copyText('req-id-birth')">📋</div></div>
+                <div class="req-item"><div><div class="req-label">Номер документа</div><div class="req-value" id="req-id-number">055297744</div></div><div class="req-copy" onclick="copyText('req-id-number')">📋</div></div>
+                <div class="req-item"><div><div class="req-label">Дата выдачи</div><div class="req-value" id="req-id-issue">03.05.2023</div></div><div class="req-copy" onclick="copyText('req-id-issue')">📋</div></div>
+                <div class="req-item"><div><div class="req-label">Срок действия</div><div class="req-value" id="req-id-expiry">02.05.2033</div></div><div class="req-copy" onclick="copyText('req-id-expiry')">📋</div></div>
+            </div>
+            <button class="send-req-btn">⬆ Отправить реквизиты</button>
         </div>
     </div>
+    <div class="document-actions">
+        <button class="btn-primary" onclick="presentDocument('id-card')">📱 Предъявить документ</button>
+        <button class="btn-secondary" onclick="sendDocument('id-card')">⬆ Отправить документ</button>
+    </div>
+</div>
 
-    <!-- ЭКРАН ПАСПОРТ -->
-    <div id="passport-screen" class="screen">
-        <div class="header">
-            <div class="back-btn" onclick="showScreen('gosuslugi-screen')">←</div>
-            <div class="header-title">Паспорт гражданина РК</div>
+<!-- ЭКРАН ПАСПОРТ -->
+<div id="passport-screen" class="screen">
+    <div class="header"><div class="back-btn" onclick="showScreen('gosuslugi-screen')">←</div><div class="header-title">Паспорт гражданина РК</div></div>
+    <div class="document-content">
+        <div class="document-tabs">
+            <div class="doc-tab active" id="pass-doc-tab" onclick="switchDocTab('pass', 'document')">Документ</div>
+            <div class="doc-tab" id="pass-req-tab" onclick="switchDocTab('pass', 'requisites')">Реквизиты</div>
         </div>
-        
-        <div class="egov-loading" id="passport-loading">
-            <div class="egov-logos">
-                <div class="egov-logo">e.gov</div>
-                <div class="plus">+</div>
-                <div class="kaspi-logo"></div>
-            </div>
-        </div>
-
-        <div class="document-content" id="passport-content">
-            <div class="document-tabs">
-                <div class="doc-tab active">Документ</div>
-                <div class="doc-tab" onclick="showDocumentRequisites('passport')">Реквизиты</div>
-            </div>
-            
+        <div id="pass-document-view">
             <div class="document-view">
                 <div class="passport-page">
-                    <div class="passport-header">
-                        <div>ПАСПОРТ / PASSPORT</div>
-                        <div>ТИП / TYPE: P</div>
-                        <div>МЕМЛЕКЕТ КОДЫ / CODE OF STATE: KAZ</div>
-                        <div>ПАСПОРТТЫҢ № / PASSPORT №: <span id="passport-number">N18452657</span></div>
-                    </div>
+                    <div class="passport-header"><div>ПАСПОРТ / PASSPORT</div><div>ТИП / TYPE: P</div><div>МЕМЛЕКЕТ КОДЫ / CODE OF STATE: KAZ</div><div>ПАСПОРТТЫҢ № / PASSPORT №: <span id="pass-number">N18452657</span></div></div>
                     <div class="passport-photo-section">
-                        <img src="https://i.pravatar.cc/150?img=11" alt="Photo" class="passport-photo" id="passport-photo">
+                        <img src="https://i.pravatar.cc/150?img=11" alt="Photo" class="passport-photo" id="passport-photo" onclick="addDocumentPhoto('passport')">
                         <div class="passport-info">
-                            <div class="passport-row">
-                                <div class="passport-label">ТЕГІ / SURNAME</div>
-                                <div class="passport-value" id="passport-surname">ЧНЕГОВ / CHNEGOV</div>
-                            </div>
-                            <div class="passport-row">
-                                <div class="passport-label">АТЫ / GIVEN NAMES</div>
-                                <div class="passport-value" id="passport-name">РУСЛАН / RUSLAN</div>
-                            </div>
-                            <div class="passport-row">
-                                <div class="passport-label">АЗАМАТТЫҒЫ / NATIONALITY</div>
-                                <div class="passport-value">ҚАЗАҚСТАН</div>
-                            </div>
-                            <div class="passport-row">
-                                <div class="passport-label">ЖЫНЫСЫ / SEX</div>
-                                <div class="passport-value">M</div>
-                            </div>
-                            <div class="passport-row">
-                                <div class="passport-label">ЖСН / ID №</div>
-                                <div class="passport-value" id="passport-iin">070428552045</div>
-                            </div>
-                            <div class="passport-row">
-                                <div class="passport-label">ТУҒАН КҮНІ / DATE OF BIRTH</div>
-                                <div class="passport-value" id="passport-birthdate">28.04.2007</div>
-                            </div>
-                            <div class="passport-row">
-                                <div class="passport-label">ТУҒАН ЖЕРІ / PLACE OF BIRTH</div>
-                                <div class="passport-value">ҚАЗАҚСТАН</div>
-                            </div>
-                            <div class="passport-row">
-                                <div class="passport-label">БЕРІЛГЕН КНІ / DATE OF ISSUE</div>
-                                <div class="passport-value" id="passport-issue-date">12.08.2025</div>
-                            </div>
-                            <div class="passport-row">
-                                <div class="passport-label">ПАСПОРТ МЕРЗІМІ / DATE OF EXPIRY</div>
-                                <div class="passport-value" id="passport-expiry-date">11.08.2035</div>
-                            </div>
-                            <div class="passport-row">
-                                <div class="passport-label">БЕРГЕН ОРГАН / AUTHORITY</div>
-                                <div class="passport-value">MINISTRY OF INTERNAL AFFAIRS</div>
-                            </div>
+                            <div class="passport-row"><div class="passport-label">ТЕГІ / SURNAME</div><div class="passport-value" id="pass-surname">ЧНЕГОВ / CHNEGOV</div></div>
+                            <div class="passport-row"><div class="passport-label">АТЫ / GIVEN NAMES</div><div class="passport-value" id="pass-name">РУСЛАН / RUSLAN</div></div>
+                            <div class="passport-row"><div class="passport-label">АЗАМАТТЫҒЫ / NATIONALITY</div><div class="passport-value">ҚАЗАҚСТАН</div></div>
+                            <div class="passport-row"><div class="passport-label">ЖЫНЫСЫ / SEX</div><div class="passport-value">M</div></div>
+                            <div class="passport-row"><div class="passport-label">ЖСН / ID №</div><div class="passport-value" id="pass-iin">070428552045</div></div>
+                            <div class="passport-row"><div class="passport-label">ТУҒАН КҮНІ / DATE OF BIRTH</div><div class="passport-value" id="pass-birthdate">28.04.2007</div></div>
+                            <div class="passport-row"><div class="passport-label">ТУҒАН ЖЕРІ / PLACE OF BIRTH</div><div class="passport-value">ҚАЗАҚСТАН</div></div>
+                            <div class="passport-row"><div class="passport-label">БЕРІЛГЕН КҮНІ / DATE OF ISSUE</div><div class="passport-value" id="pass-issue-date">12.08.2025</div></div>
+                            <div class="passport-row"><div class="passport-label">ПАСПОРТ МЕРЗІМІ / DATE OF EXPIRY</div><div class="passport-value" id="pass-expiry-date">11.08.2035</div></div>
+                            <div class="passport-row"><div class="passport-label">БЕРГЕН ОРГАН / AUTHORITY</div><div class="passport-value">MINISTRY OF INTERNAL AFFAIRS</div></div>
                         </div>
                     </div>
-                    <div class="mrz">
-                        <div>&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;</div>
-                        <div>CHNEGOV&lt;&lt;RUSLAN&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;</div>
-                        <div>&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;</div>
-                    </div>
+                    <div class="mrz"><div>&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;</div><div>CHNEGOV&lt;&lt;RUSLAN&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;</div><div>&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;</div></div>
                 </div>
             </div>
         </div>
-
-        <div class="document-actions">
-            <button class="btn-primary" onclick="presentDocument('passport')">
-                📱 Предъявить документ
-            </button>
-            <button class="btn-secondary" onclick="sendDocument('passport')">
-                ⬆ Отправить документ
-            </button>
+        <div id="pass-requisites-view" style="display: none;">
+            <div class="requisites-list">
+                <div class="req-item"><div><div class="req-label">ФИО</div><div class="req-value" id="req-pass-fio">Чнегов Руслан Александрович</div></div><div class="req-copy" onclick="copyText('req-pass-fio')">📋</div></div>
+                <div class="req-item"><div><div class="req-label">ИИН</div><div class="req-value" id="req-pass-iin">070428552045</div></div><div class="req-copy" onclick="copyText('req-pass-iin')"></div></div>
+                <div class="req-item"><div><div class="req-label">Дата рождения</div><div class="req-value" id="req-pass-birth">28.04.2007</div></div><div class="req-copy" onclick="copyText('req-pass-birth')">📋</div></div>
+                <div class="req-item"><div><div class="req-label">Номер документа</div><div class="req-value" id="req-pass-number">N18452657</div></div><div class="req-copy" onclick="copyText('req-pass-number')">📋</div></div>
+                <div class="req-item"><div><div class="req-label">Дата выдачи</div><div class="req-value" id="req-pass-issue">12.08.2025</div></div><div class="req-copy" onclick="copyText('req-pass-issue')">📋</div></div>
+                <div class="req-item"><div><div class="req-label">Срок действия</div><div class="req-value" id="req-pass-expiry">11.08.2035</div></div><div class="req-copy" onclick="copyText('req-pass-expiry')">📋</div></div>
+            </div>
+            <button class="send-req-btn">⬆ Отправить реквизиты</button>
         </div>
     </div>
+    <div class="document-actions">
+        <button class="btn-primary" onclick="presentDocument('passport')">📱 Предъявить документ</button>
+        <button class="btn-secondary" onclick="sendDocument('passport')">⬆ Отправить документ</button>
+    </div>
+</div>
 
-    <!-- ЭКРАН ВОДИТЕЛЬСКИЕ ПРАВА -->
-    <div id="drivers-license-screen" class="screen">
-        <div class="header">
-            <div class="back-btn" onclick="showScreen('gosuslugi-screen')">←</div>
-            <div class="header-title">Водительские права</div>
+<!-- ЭКРАН ВОДИТЕЛЬСКИЕ ПРАВА -->
+<div id="drivers-license-screen" class="screen">
+    <div class="header"><div class="back-btn" onclick="showScreen('gosuslugi-screen')">←</div><div class="header-title">Водительские права</div></div>
+    <div class="document-content">
+        <div class="document-tabs">
+            <div class="doc-tab active" id="dl-doc-tab" onclick="switchDocTab('dl', 'document')">Документ</div>
+            <div class="doc-tab" id="dl-req-tab" onclick="switchDocTab('dl', 'requisites')">Реквизиты</div>
         </div>
-        
-        <div class="document-content">
-            <div class="document-tabs">
-                <div class="doc-tab active">Документ</div>
-                <div class="doc-tab" onclick="showDocumentRequisites('drivers-license')">Реквизиты</div>
-            </div>
-            
+        <div id="dl-document-view">
             <div class="document-view">
                 <div class="drivers-license-front">
-                    <div class="dl-header">
-                        <div>ҚАЗАҚСТАН РЕСПУБЛИКАСЫ</div>
-                        <div>РЕСПУБЛИКА КАЗАХСТАН</div>
-                        <div>REPUBLIC OF KAZAKHSTAN</div>
-                        <div>KZ</div>
-                        <div>ЖҮРГІЗУШІ КУӘЛІГІ</div>
-                        <div>ВОДИТЕЛЬСКОЕ УДОСТОВЕРЕНИЕ</div>
-                        <div>DRIVING LICENCE</div>
-                    </div>
+                    <div class="dl-header"><div>ҚАЗАҚСТАН РЕСПУБЛИКАСЫ</div><div>РЕСПУБЛИКА КАЗАХСТАН</div><div>REPUBLIC OF KAZAKHSTAN</div><div style="font-size: 16px; font-weight: bold; margin: 4px 0;">KZ</div><div>ЖҮРГІЗУШІ КУӘЛІГІ</div><div>ВОДИТЕЛЬСКОЕ УДОСТОВЕРЕНИЕ</div><div>DRIVING LICENCE</div></div>
                     <div class="dl-photo-section">
-                        <img src="https://i.pravatar.cc/150?img=11" alt="Photo" class="dl-photo" id="dl-photo">
+                        <img src="https://i.pravatar.cc/150?img=11" alt="Photo" class="dl-photo" id="dl-photo" onclick="addDocumentPhoto('dl')">
                         <div class="dl-info">
-                            <div class="dl-row">
-                                <div class="dl-label">1. Тегі / Фамилия / Surname</div>
-                                <div class="dl-value" id="dl-surname">ЧНЕГОВ / CHNEGOV</div>
-                            </div>
-                            <div class="dl-row">
-                                <div class="dl-label">2. Аты, әкесінің аты / Имя, отчество / Name, patronymic</div>
-                                <div class="dl-value" id="dl-name">РУСЛАН АЛЕКСАНДРОВИЧ / RUSLAN</div>
-                            </div>
-                            <div class="dl-row">
-                                <div class="dl-label">3.</div>
-                                <div class="dl-value" id="dl-birthdate">28.04.2007, область Абай</div>
-                            </div>
-                            <div class="dl-row">
-                                <div class="dl-label">4a)</div>
-                                <div class="dl-value" id="dl-issue-date">29.01.2026</div>
-                            </div>
-                            <div class="dl-row">
-                                <div class="dl-label">4b)</div>
-                                <div class="dl-value" id="dl-expiry-date">28.01.2036</div>
-                            </div>
-                            <div class="dl-row">
-                                <div class="dl-label">4c)</div>
-                                <div class="dl-value">ДП обл. Абай</div>
-                            </div>
-                            <div class="dl-row">
-                                <div class="dl-label">4d)</div>
-                                <div class="dl-value" id="dl-iin">ЖСН/ИИН 070428552045</div>
-                            </div>
-                            <div class="dl-row">
-                                <div class="dl-label">5.</div>
-                                <div class="dl-value" id="dl-number">UB 960929</div>
-                            </div>
-                            <div class="dl-row">
-                                <div class="dl-label">9.</div>
-                                <div class="dl-categories">★ B ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★</div>
-                            </div>
+                            <div class="dl-row"><div class="dl-label">1. Тегі / Фамилия / Surname</div><div class="dl-value" id="dl-surname">ЧНЕГОВ / CHNEGOV</div></div>
+                            <div class="dl-row"><div class="dl-label">2. Аты, әкесінің аты / Имя, отчество</div><div class="dl-value" id="dl-name">РУСЛАН АЛЕКСАНДРОВИЧ / RUSLAN</div></div>
+                            <div class="dl-row"><div class="dl-label">3.</div><div class="dl-value" id="dl-birthdate">28.04.2007, область Абай</div></div>
+                            <div class="dl-row"><div class="dl-label">4a)</div><div class="dl-value" id="dl-issue-date">29.01.2026</div></div>
+                            <div class="dl-row"><div class="dl-label">4b)</div><div class="dl-value" id="dl-expiry-date">28.01.2036</div></div>
+                            <div class="dl-row"><div class="dl-label">4c)</div><div class="dl-value">ДП обл. Абай</div></div>
+                            <div class="dl-row"><div class="dl-label">4d)</div><div class="dl-value" id="dl-iin">ЖСН/ИИН 070428552045</div></div>
+                            <div class="dl-row"><div class="dl-label">5.</div><div class="dl-value" id="dl-number">UB 960929</div></div>
+                            <div class="dl-row"><div class="dl-label">9.</div><div class="dl-categories">★ B ★ ★ ★ ★ ★ ★ ★ ★ ★ ★ ★</div></div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-
-        <div class="document-actions">
-            <button class="btn-primary" onclick="presentDocument('drivers-license')">
-                📱 Предъявить документ
-            </button>
-            <button class="btn-secondary" onclick="sendDocument('drivers-license')">
-                ⬆ Отправить документ
-            </button>
+        <div id="dl-requisites-view" style="display: none;">
+            <div class="requisites-list">
+                <div class="req-item"><div><div class="req-label">ФИО</div><div class="req-value" id="req-dl-fio">Чнегов Руслан Александрович</div></div><div class="req-copy" onclick="copyText('req-dl-fio')">📋</div></div>
+                <div class="req-item"><div><div class="req-label">ИИН</div><div class="req-value" id="req-dl-iin">070428552045</div></div><div class="req-copy" onclick="copyText('req-dl-iin')"></div></div>
+                <div class="req-item"><div><div class="req-label">Номер документа</div><div class="req-value" id="req-dl-number">UB 960929</div></div><div class="req-copy" onclick="copyText('req-dl-number')"></div></div>
+                <div class="req-item"><div><div class="req-label">Дата выдачи</div><div class="req-value" id="req-dl-issue">29.01.2026</div></div><div class="req-copy" onclick="copyText('req-dl-issue')">📋</div></div>
+                <div class="req-item"><div><div class="req-label">Срок действия</div><div class="req-value" id="req-dl-expiry">28.01.2036</div></div><div class="req-copy" onclick="copyText('req-dl-expiry')">📋</div></div>
+            </div>
+            <button class="send-req-btn">⬆ Отправить реквизиты</button>
         </div>
     </div>
+    <div class="document-actions">
+        <button class="btn-primary" onclick="presentDocument('drivers-license')">📱 Предъявить документ</button>
+        <button class="btn-secondary" onclick="sendDocument('drivers-license')"> Отправить документ</button>
+    </div>
+</div>
 
-    <!-- ОСТАЛЬНЫЕ ЭКРАНЫ (Магазин, Travel, Maps и т.д.) будут в следующем сообщении -->
+<!-- ЭКРАН КАРТЫ -->
+<div id="maps-screen" class="screen">
+    <div class="header"><div class="back-btn" onclick="showScreen('services-screen')">←</div><div class="header-title">Kaspi Maps</div><div style="width: 30px; text-align: right; cursor: pointer;" onclick="showScreen('services-screen')">✕</div></div>
+    <div id="map"></div>
+    <div class="map-filters">
+        <div class="map-filter"><div class="map-filter-icon">🏦</div><div class="map-filter-title">Отделения</div><div class="map-filter-desc">Обслуживание и консультация</div></div>
+        <div class="map-filter"><div class="map-filter-icon"></div><div class="map-filter-title">Банкоматы</div><div class="map-filter-desc">Пополнение, выдача наличных</div></div>
+        <div class="map-filter"><div class="map-filter-icon">💳</div><div class="map-filter-title">Терминалы</div><div class="map-filter-desc">Оплата и пополнение</div></div>
+        <div class="map-filter"><div class="map-filter-icon"></div><div class="map-filter-title">Картоматы</div><div class="map-filter-desc">Получение Kaspi Gold</div></div>
+    </div>
+</div>
 
+<!-- ЭКРАН TRAVEL -->
+<div id="travel-screen" class="screen">
+    <div class="header"><div class="header-title">Kaspi Travel</div><div style="width: 30px; text-align: right; cursor: pointer;" onclick="showScreen('main-screen')">✕</div></div>
+    <div class="travel-banner">
+        <div style="font-size: 16px; font-weight: 600; margin-bottom: 8px;">Забронируйте вариант отдыха в Казахстане</div>
+        <div class="promo-badge">0·0·12</div>
+    </div>
+    <div class="travel-categories">
+        <div class="travel-category"><div class="travel-category-icon">✈️</div><div class="travel-category-name">Авиа</div></div>
+        <div class="travel-category"><div class="travel-category-icon">🚂</div><div class="travel-category-name">ЖД</div></div>
+        <div class="travel-category"><div class="travel-category-icon" style="position: relative;">🌴<span class="badge" style="position: absolute; top: -4px; right: -4px; background: #ffc107; color: #000; font-size: 9px; padding: 2px 6px; border-radius: 8px;">0·0·24</span></div><div class="travel-category-name">Туры</div></div>
+        <div class="travel-category"><div class="travel-category-icon" style="position: relative;">🏠<span class="badge" style="position: absolute; top: -4px; right: -4px; background: #ffc107; color: #000; font-size: 9px; padding: 2px 6px; border-radius: 8px;">0·0·12</span></div><div class="travel-category-name">Казахстан</div></div>
+    </div>
+    <div class="travel-tabs">
+        <div class="tab active">Рекомендации</div>
+        <div class="tab">🔥 Горящие туры</div>
+    </div>
+    <div class="hotels-grid">
+        <div class="hotel-card"><img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=200&fit=crop" alt="Hotel"><div class="hotel-info"><div class="hotel-name">Le Pavillon Hoi An Luxury ... 4*</div><div class="hotel-stars"><span class="installment-badge">0·0·24</span> x24</div><div class="hotel-price"><span class="discount-badge">-12%</span><span class="old-price">817 736 ₸</span></div></div></div>
+        <div class="hotel-card"><img src="https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=400&h=200&fit=crop" alt="Hotel"><div class="hotel-info"><div class="hotel-name">Best Western Premier Mar... 5*</div><div class="hotel-stars"><span class="installment-badge">0·0·24</span> x24</div><div class="hotel-price"><span class="discount-badge">-6%</span><span class="old-price">998 114 ₸</span></div></div></div>
+        <div class="hotel-card"><img src="https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=400&h=200&fit=crop" alt="Hotel"><div class="hotel-info"><div class="hotel-name">Emerald Bay Hotel & Spa N... 4*</div><div class="hotel-stars"><span class="installment-badge">0·0·24</span> x24</div><div class="hotel-price"><span class="discount-badge">-9%</span><span class="old-price">901 306 ₸</span></div></div></div>
+        <div class="hotel-card"><img src="https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=400&h=200&fit=crop" alt="Hotel"><div class="hotel-info"><div class="hotel-name">V Hotel Nha Trang 4*</div><div class="hotel-stars"><span class="installment-badge">0·0·24</span> x24</div><div class="hotel-price"><span class="discount-badge">-5%</span><span class="old-price">822 771 ₸</span></div></div></div>
+    </div>
+</div>
+
+<!-- ЭКРАН МАГАЗИН -->
+<div id="shop-screen" class="screen">
+    <div class="shop-header">
+        <div class="back-btn" onclick="showScreen('main-screen')" style="color: #e3342f;">←</div>
+        <input type="text" placeholder="Поиск в Магазине">
+        <span style="font-size: 20px;"></span>
+        <span style="font-size: 20px;">🛒</span>
+    </div>
+    <div class="shop-categories">
+        <div class="shop-category active">Все категории</div>
+        <div class="shop-category">Телефоны</div>
+        <div class="shop-category">Бытовая техника</div>
+        <div class="shop-category">ТВ, Аудио</div>
+        <div class="shop-category">Компьютеры</div>
+        <div class="shop-category">Мебель</div>
+        <div class="shop-category">Красота</div>
+        <div class="shop-category">Детские</div>
+        <div class="shop-category">Аптека</div>
+    </div>
+    <div class="products-scroll" id="shop-products"></div>
+    <nav class="bottom-nav">
+        <div class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg><div>Магазин</div></div>
+        <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg><div>Каталог</div></div>
+        <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg><div>Избранное</div></div>
+        <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg><div>Корзина</div></div>
+        <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><div>Мои заказы</div></div>
+    </nav>
+</div>
+
+<!-- МОДАЛЬНОЕ ОКНО QR -->
+<div id="qr-modal" class="modal-overlay" style="display: none;" onclick="closeModal('qr-modal')">
+    <div class="modal-content" onclick="event.stopPropagation()" style="position: relative;">
+        <div class="modal-close" onclick="closeModal('qr-modal')">✕</div>
+        <div style="font-size: 20px; font-weight: 600; margin-bottom: 16px;" id="modal-doc-title">Удостоверение личности</div>
+        <div style="font-size: 14px; color: #666; margin-bottom: 16px;">Покажите QR-код сотруднику</div>
+        <div class="modal-qr">
+            <canvas id="qr-canvas" width="180" height="180"></canvas>
+        </div>
+        <div style="font-size: 14px; color: #666; margin-top: 16px;">или скажите код</div>
+        <div class="modal-code" id="modal-code">000000</div>
+    </div>
+</div>
+
+<!-- ЭКРАН ВВОДА КОДА -->
+<div id="access-code-screen" class="screen">
+    <div class="access-code-screen" style="min-height: 100vh;">
+        <img src="https://i.pravatar.cc/150?img=11" alt="Profile" class="access-code-avatar" id="code-avatar">
+        <div style="font-size: 18px; margin-bottom: 8px;">Руслан Ч.</div>
+        <div class="access-code-title">Код доступа</div>
+        <div class="code-dots" id="code-dots">
+            <div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div>
+        </div>
+        <div class="numpad">
+            <button class="numpad-btn" onclick="enterCode(1)">1</button>
+            <button class="numpad-btn" onclick="enterCode(2)">2<small>А Б В Г</small></button>
+            <button class="numpad-btn" onclick="enterCode(3)">3<small>Д Е Ж З</small></button>
+            <button class="numpad-btn" onclick="enterCode(4)">4<small>И Й К Л</small></button>
+            <button class="numpad-btn" onclick="enterCode(5)">5<small>М Н О П</small></button>
+            <button class="numpad-btn" onclick="enterCode(6)">6<small>Р С Т У</small></button>
+            <button class="numpad-btn" onclick="enterCode(7)">7<small>Ф Х Ц Ч</small></button>
+            <button class="numpad-btn" onclick="enterCode(8)">8<small>Ш Щ Ы</small></button>
+            <button class="numpad-btn" onclick="enterCode(9)">9<small>Ь Э Ю Я</small></button>
+            <button class="numpad-btn" onclick="showFaceIDScreen()">😊</button>
+            <button class="numpad-btn" onclick="enterCode(0)">0</button>
+            <button class="numpad-btn" onclick="deleteCode()">⌫</button>
+        </div>
+        <div class="forgot-code" onclick="forgotCode()">Забыли код доступа?</div>
+    </div>
+</div>
+
+<!-- ЭКРАН FACE ID -->
+<div id="face-id-screen" class="screen">
+    <div class="face-id-screen" style="min-height: 100vh;">
+        <div class="face-id-icon">👤</div>
+        <div class="face-id-text">Face ID</div>
+        <div class="face-id-subtext">Распознавание лица...</div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
 </body>
 </html>
